@@ -151,6 +151,16 @@
     syncOffline: (items) => request('/join/offline/sync', { method: 'POST', body: { items } }),
     report: (id, body) => request(`/protests/${encodeURIComponent(id)}/report`, { method: 'POST', body }),
     reportList: () => request('/reports'),
+    broadcast: (id) => request(`/protests/${encodeURIComponent(id)}/broadcast`),
+    broadcastHealth: () => request('/broadcast'),
+    saveBroadcast: (id, body) =>
+      request(`/protests/${encodeURIComponent(id)}/broadcast`, { method: 'PUT', body }),
+    startBroadcast: (id, body) =>
+      request(`/protests/${encodeURIComponent(id)}/broadcast/start`, { method: 'POST', body }),
+    stopBroadcast: (id) => request(`/protests/${encodeURIComponent(id)}/broadcast/stop`, { method: 'POST' }),
+    restartBroadcast: (id) =>
+      request(`/protests/${encodeURIComponent(id)}/broadcast/restart`, { method: 'POST' }),
+    frameUrl: (id) => `/api/protests/${encodeURIComponent(id)}/broadcast/frame.png`,
     physicalRequests: (id) => request(`/protests/${encodeURIComponent(id)}/physical-requests`),
     physicalRequest: (id, body) =>
       request(`/protests/${encodeURIComponent(id)}/physical-request`, { method: 'POST', body }),

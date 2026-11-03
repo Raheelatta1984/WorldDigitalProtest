@@ -30,6 +30,11 @@ export const config = {
     process.env.YOUTUBE_CHANNEL_URL || 'https://www.youtube.com/@WorldDigitalProtest',
   youtubeChannelId: process.env.YOUTUBE_CHANNEL_ID || '',
 
+  // Direct-to-YouTube pushing. Off by default so a stock install never opens an
+  // outbound RTMP connection unless an operator asks for one.
+  broadcastEnabled: bool(process.env.WDP_BROADCAST, true),
+  broadcastAutoResume: bool(process.env.WDP_BROADCAST_AUTORESUME, false),
+
   // How long a single pairing code (offline/BLE handshake) stays valid.
   pairingCodeTtlMs: Number(process.env.WDP_PAIRING_TTL_MS || 15 * 60 * 1000),
 

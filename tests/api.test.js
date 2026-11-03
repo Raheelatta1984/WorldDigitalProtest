@@ -298,3 +298,46 @@ test('static app and overlay routes are served', async () => {
   const json = await map.json();
   assert.ok(json.polygons.length > 100);
 });
+
+test('broadcast endpoints expose status without ever leaking the stream key', async () => {
+  const key = 'abcd-1234-wxyz-9876';
+  const saved = await api('/protests/test-protest/broadcast', {
+    method: 'PUT',
+    body: { streamKey: key, fps: 1, bitrateKbps: 2500, transport: 'rtmps' },
+  });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.json.broadcast.hasKey, true);
+  assert.ok(!JSON.stringify(saved.json).includes(key), 'response must not contain the key');
+
+  const status = await api('/protests/test-protest/broadcast');
+  assert.equal(status.status, 200);
+  assert.equal(status.json.broadcast.state, 'idle');
+  assert.equal(status.json.broadcast.hasKey, true);
+  assert.ok(status.json.broadcast.keyHint.includes('•'));
+  assert.ok(status.json.broadcast.target.endsWith('<stream-key>'));
+  assert.ok(!JSON.stringify(status.json).includes(key));
+
+  const health = await api('/broadcast');
+  assert.equal(health.status, 200);
+  assert.equal(health.json.health.frame.width, 1920);
+  assert.ok(Array.isArray(health.json.broadcasts));
+});
+
+test('starting a broadcast without an event key is rejected, not attempted', async () => {
+  await api('/protests/test-protest/broadcast', { method: 'PUT', body: { streamKey: '' } });
+  const started = await api('/protests/test-protest/broadcast/start', { method: 'POST', body: {} });
+  assert.equal(started.status, 400);
+  assert.equal(started.json.code, 'missing_stream_key');
+});
+
+test('the frame preview endpoint returns a real 1080p PNG', async () => {
+  const res = await fetch(`${base}/api/protests/test-protest/broadcast/frame.png`);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('content-type'), 'image/png');
+  const bytes = Buffer.from(await res.arrayBuffer());
+  assert.ok(bytes.length > 10_000, 'frame should not be empty');
+  assert.deepEqual([...bytes.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47]);
+  // IHDR width/height live at byte 16..24 of a PNG.
+  assert.equal(bytes.readUInt32BE(16), 1920);
+  assert.equal(bytes.readUInt32BE(20), 1080);
+});
