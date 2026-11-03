@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Start a protest — World Digital Protest</title>
+    <meta
+      name="description"
+      content="Publish a worldwide protest: a headline, a reason, one shared time window and a target. Every protest runs on the same peaceful protocol."
+    />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main class="wrap-narrow">
+      <section class="section" style="margin-top: 1.5rem">
+        <h1>Start a protest</h1>
+        <p class="muted">
+          Three things are required: a headline, a reason, and one shared time window. Anything that
+          calls for violence is blocked before it can be published, on every protest, without
+          exception.
+        </p>
+      </section>
+
+      <section class="section">
+        <form id="create-form" class="card stack" style="padding: 1.4rem">
+          <label class="field">
+            <span class="field-label">Headline</span>
+            <input type="text" name="headline" maxlength="140" required minlength="8" placeholder="One clear demand, 140 characters or fewer" />
+            <span class="help"><span id="headline-count">0</span>/140 · shown in every country exactly as written</span>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Reason</span>
+            <textarea name="reason" required minlength="20" maxlength="4000" placeholder="Why does this protest exist? What is the evidence, the harm, and the ask?"></textarea>
+          </label>
+
+          <label class="field">
+            <span class="field-label">What we are asking for (optional)</span>
+            <textarea name="asks" maxlength="2000" placeholder="Numbered demands work best."></textarea>
+          </label>
+
+          <div class="grid grid-2" style="gap: 0.9rem">
+            <label class="field" style="margin: 0">
+              <span class="field-label">Category</span>
+              <select name="category">
+                <option value="climate">Climate</option>
+                <option value="civic">Civic / democratic</option>
+                <option value="education">Education</option>
+                <option value="health">Health</option>
+                <option value="transparency">Transparency / anti-corruption</option>
+                <option value="equality">Equality and rights</option>
+                <option value="labour">Labour</option>
+                <option value="general">Other</option>
+              </select>
+            </label>
+            <label class="field" style="margin: 0">
+              <span class="field-label">Worldwide target</span>
+              <input type="number" name="targetJoiners" min="1" value="100000" />
+              <span class="help">Every participant in every country counts toward this.</span>
+            </label>
+          </div>
+
+          <div class="grid grid-2" style="gap: 0.9rem">
+            <label class="field" style="margin: 0">
+              <span class="field-label">Opens (UTC)</span>
+              <input type="datetime-local" name="startsAt" />
+              <span class="help">Leave empty to open immediately.</span>
+            </label>
+            <label class="field" style="margin: 0">
+              <span class="field-label">Closes (UTC)</span>
+              <input type="datetime-local" name="endsAt" />
+              <span class="help">Default: seven days after it opens.</span>
+            </label>
+          </div>
+
+          <label class="field">
+            <span class="field-label">YouTube live video ID (optional)</span>
+            <input type="text" name="youtubeVideoId" placeholder="e.g. 2Mp0L4pUpzE" />
+            <span class="help">
+              Each protest gets its own live slot. The KPI overlay is shown on stream for the whole
+              protest, until it finishes.
+            </span>
+          </label>
+
+          <div class="consent">
+            <label>
+              <input type="checkbox" name="peacefulRequired" required />
+              <span>
+                This protest is peaceful and lawful. It calls for no violence, no weapons, no property
+                damage, and no coordination of blockades or occupations.
+              </span>
+            </label>
+            <label>
+              <input type="checkbox" name="oneProtocolRequired" required />
+              <span>
+                I accept that this protest runs on the platform protocol with no local exceptions, and
+                that every participant must accept it individually.
+              </span>
+            </label>
+            <label>
+              <input type="checkbox" name="noPersonalRequired" required />
+              <span>
+                This protest will collect no personal information from participants beyond an age
+                range, gender and the country/city/area used for the count.
+              </span>
+            </label>
+          </div>
+
+          <div id="screen-feedback"></div>
+
+          <div class="row-between">
+            <span class="dim" id="create-status"></span>
+            <button class="btn btn-primary" type="submit">Publish worldwide</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>What publishing does</h3>
+          <div class="grid grid-2 mt-2">
+            <div class="notice info">
+              <strong>Visible immediately</strong><br />
+              The protest appears on the homepage and the live list for everyone, in every country, at
+              the same moment.
+            </div>
+            <div class="notice info">
+              <strong>Live KPIs from the first join</strong><br />
+              Country, city, area, gender, age and channel counts start updating in real time.
+            </div>
+            <div class="notice info">
+              <strong>A pairing code for offline joining</strong><br />
+              The code rotates so people can join from posters, beacons and hotspots.
+            </div>
+            <div class="notice info">
+              <strong>An overlay for the stream</strong><br />
+              A transparent KPI page your broadcast software can capture for the whole protest.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="/assets/js/core.js"></script>
+    <script src="/assets/js/shell.js"></script>
+    <script>
+      (function () {
+        const { $, api, escapeHtml, toast, relativeToNow } = window.WDP;
+
+        const form = $('#create-form');
+        const headline = form.elements.headline;
+        headline.addEventListener('input', () => {
+          $('#headline-count').textContent = headline.value.length;
+        });
+
+        async function screenNow() {
+          const text = `${form.elements.headline.value} ${form.elements.reason.value} ${form.elements.asks.value}`;
+          if (text.trim().length < 10) {
+            $('#screen-feedback').innerHTML = '';
+            return;
+          }
+          try {
+            const { result } = await api.screen({
+              headline: form.elements.headline.value,
+              reason: form.elements.reason.value,
+              asks: form.elements.asks.value,
+            });
+            $('#screen-feedback').innerHTML = result.ok
+              ? ''
+              : `<div class="notice error">Blocked by protocol article 1: ${result.flags
+                  .map((f) => `<span class="mono">${escapeHtml(f)}</span>`)
+                  .join(', ')}. Reword before publishing.</div>`;
+          } catch {
+            /* screening is advisory in the UI; the server enforces it on submit */
+          }
+        }
+
+        form.elements.headline.addEventListener('change', screenNow);
+        form.elements.reason.addEventListener('change', screenNow);
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const status = $('#create-status');
+          const btn = form.querySelector('button[type=submit]');
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spinner"></span> Publishing…';
+          try {
+            const body = {
+              headline: form.elements.headline.value.trim(),
+              reason: form.elements.reason.value.trim(),
+              asks: form.elements.asks.value.trim(),
+              category: form.elements.category.value,
+              targetJoiners: Number(form.elements.targetJoiners.value),
+              youtube: { videoId: form.elements.youtubeVideoId.value.trim() },
+            };
+            if (form.elements.startsAt.value) body.startsAt = new Date(form.elements.startsAt.value).toISOString();
+            if (form.elements.endsAt.value) body.endsAt = new Date(form.elements.endsAt.value).toISOString();
+
+            const { protest } = await api.createProtest(body);
+            status.textContent = 'Published.';
+            toast('Protest published worldwide.', 'success');
+            location.href = `protest.html?id=${encodeURIComponent(protest.id)}`;
+          } catch (err) {
+            status.innerHTML = `<span class="notice error">${escapeHtml(err.message)}${
+              err.details && err.details.flagged
+                ? ` Flagged: ${err.details.flagged.map(escapeHtml).join(', ')}`
+                : ''
+            }</span>`;
+            btn.disabled = false;
+            btn.textContent = 'Publish worldwide';
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

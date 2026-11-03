@@ -1,0 +1,5 @@
+node_modules
+var
+.git
+tests
+*.log

@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Physical presence — verified, scheduled, optional</title>
+    <meta
+      name="description"
+      content="Digital presence is full participation. If physical presence is ever needed, it is requested, verified, then scheduled from a small, spread-out list of participants — never a crowd."
+    />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main class="wrap">
+      <section class="section" style="margin-top: 1.5rem">
+        <span class="badge">Optional layer</span>
+        <h1 style="margin-top: 0.6rem">Physical presence, only when it is needed</h1>
+        <p class="muted" style="max-width: 74ch">
+          The protest works completely without anyone leaving their home. Sometimes an event needs a
+          small physical presence — a delegation, a handover, a briefing. That is a separate layer
+          with its own steps: request, verify, schedule. It never becomes a requirement, and it never
+          becomes a crowd.
+        </p>
+      </section>
+
+      <section class="section">
+        <div class="grid grid-4">
+          <div class="stat">
+            <div class="stat-label">Step 1</div>
+            <div class="stat-value" style="font-size: 1.15rem">Request</div>
+            <div class="stat-foot">Any participant may request it. No obligation either way.</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Step 2</div>
+            <div class="stat-value" style="font-size: 1.15rem">Verify</div>
+            <div class="stat-foot">Identity and intent are verified before anything is scheduled.</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Step 3</div>
+            <div class="stat-value" style="font-size: 1.15rem">Select</div>
+            <div class="stat-foot">People are drawn from different areas, not one dense city.</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Step 4</div>
+            <div class="stat-value" style="font-size: 1.15rem">Schedule</div>
+            <div class="stat-foot">A short, specific time window under the same protocol.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Why verification comes first</h3>
+            <p class="card-sub">
+              Digital participation needs no identity. A physical gathering does — for safety, not
+              surveillance.
+            </p>
+            <ul class="muted" style="font-size: 0.9rem; padding-left: 1.1rem">
+              <li>Verification confirms a real person is making the request, and that the intent is peaceful.</li>
+              <li>Verification data is held separately from protest counts and is never shown in a KPI.</li>
+              <li>Nobody is added to a physical schedule without their own explicit consent.</li>
+              <li>Declining has no effect on digital participation. Your join stays counted.</li>
+            </ul>
+            <div class="notice warn mt-2">
+              <strong>Nothing here organises a march, blockade or occupation.</strong> Protocol article
+              7 stands: local law always applies, and the platform is never used to coordinate an
+              obstruction.
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Request physical presence</h3>
+            <p class="card-sub">
+              Submitted requests go to verification. Nothing is scheduled automatically.
+            </p>
+            <form id="physical-form">
+              <label class="field">
+                <span class="field-label">Protest</span>
+                <select id="protest-select" name="protestId" required></select>
+              </label>
+              <div class="grid grid-2" style="gap: 0.9rem">
+                <label class="field" style="margin: 0">
+                  <span class="field-label">Your name</span>
+                  <input type="text" name="name" placeholder="Only for verification" required />
+                </label>
+                <label class="field" style="margin: 0">
+                  <span class="field-label">Contact for verification</span>
+                  <input type="text" name="contact" placeholder="Handled separately from counts" required />
+                </label>
+              </div>
+              <div class="grid grid-2 mt-2" style="gap: 0.9rem">
+                <label class="field" style="margin: 0">
+                  <span class="field-label">Country</span>
+                  <select id="country" name="country" required></select>
+                </label>
+                <label class="field" style="margin: 0">
+                  <span class="field-label">City / area</span>
+                  <input type="text" name="area" placeholder="e.g. Newtown, Sydney" required />
+                </label>
+              </div>
+              <label class="field mt-2">
+                <span class="field-label">Availability</span>
+                <input type="text" name="availability" placeholder="e.g. weekday evenings, 2-3 hours" required />
+              </label>
+              <div class="consent" style="margin-bottom: 1rem">
+                <label>
+                  <input type="checkbox" name="peaceful" required />
+                  <span>
+                    I will act only peacefully and lawfully, I accept the protocol, and I understand
+                    that physical presence is scheduled only after verification.
+                  </span>
+                </label>
+              </div>
+              <button class="btn btn-primary" type="submit">Submit for verification</button>
+            </form>
+            <div id="physical-result" class="mt-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>How a group is selected</h3>
+          <div class="table-scroll mt-2">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rule</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Maximum group size is small and capped</td>
+                  <td>A crowd is not the point; a credible, calm delegation is.</td>
+                </tr>
+                <tr>
+                  <td>Participants come from different areas and countries</td>
+                  <td>No single neighbourhood or city bears the burden or the risk.</td>
+                </tr>
+                <tr>
+                  <td>Nobody attends without their own confirmed consent</td>
+                  <td>Accepting the digital protocol is not accepting a physical ask.</td>
+                </tr>
+                <tr>
+                  <td>Every scheduled group signs the same protocol</td>
+                  <td>One standard, regardless of where the group meets.</td>
+                </tr>
+                <tr>
+                  <td>A scheduled event can be cancelled at any time</td>
+                  <td>Safety outranks attendance, always.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <div class="row-between">
+            <h3 style="margin: 0">Requests in this workspace</h3>
+            <button class="btn btn-ghost btn-sm" id="btn-reload">Refresh</button>
+          </div>
+          <p class="card-sub">Only verification status is shown here. Names are not part of any KPI.</p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Protest</th>
+                  <th>Country</th>
+                  <th>Area</th>
+                  <th>Availability</th>
+                  <th>Verification</th>
+                </tr>
+              </thead>
+              <tbody id="request-rows">
+                <tr><td colspan="5" class="dim">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="/assets/js/core.js"></script>
+    <script src="/assets/js/shell.js"></script>
+    <script>
+      (function () {
+        const { $, el, api, escapeHtml, toast } = window.WDP;
+
+        async function loadProtests() {
+          const [{ protests }, { countries }] = await Promise.all([api.protests(false), api.countries()]);
+          const select = $('#protest-select');
+          select.innerHTML = '';
+          for (const p of protests) {
+            select.append(el('option', { value: p.id, text: p.headline }));
+          }
+          const countrySelect = $('#country');
+          countrySelect.innerHTML = '<option value="">Select…</option>';
+          for (const c of countries) {
+            countrySelect.append(el('option', { value: c.iso2, text: c.name }));
+          }
+        }
+
+        async function loadRequests() {
+          const tbody = $('#request-rows');
+          const protests = (await api.protests(true)).protests;
+          const rows = [];
+          for (const p of protests.slice(0, 6)) {
+            try {
+              const { requests } = await api.physicalRequests(p.id);
+              for (const r of requests) rows.push({ ...r, headline: p.headline });
+            } catch {
+              /* ignore individual failures */
+            }
+          }
+          tbody.innerHTML = '';
+          if (!rows.length) {
+            tbody.append(el('tr', {}, el('td', { colspan: 5, class: 'dim', text: 'No requests yet.' })));
+            return;
+          }
+          for (const r of rows) {
+            tbody.append(
+              el('tr', {}, [
+                el('td', { text: r.headline }),
+                el('td', { class: 'dim', text: r.country }),
+                el('td', { class: 'dim', text: r.area }),
+                el('td', { class: 'dim', text: r.availability }),
+                el('td', {}, el('span', { class: 'badge upcoming', text: r.verificationStatus })),
+              ])
+            );
+          }
+        }
+
+        $('#physical-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const form = e.target;
+          const host = $('#physical-result');
+          try {
+            const data = await api.physicalRequest(form.elements.protestId.value, {
+              name: form.elements.name.value,
+              contact: form.elements.contact.value,
+              country: form.elements.country.value,
+              area: form.elements.area.value,
+              availability: form.elements.availability.value,
+            });
+            host.innerHTML = `<div class="notice success">${escapeHtml(data.message)}</div>`;
+            form.reset();
+            loadRequests();
+          } catch (err) {
+            host.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+          }
+        });
+
+        $('#btn-reload').addEventListener('click', loadRequests);
+
+        loadProtests().then(loadRequests).catch((err) => toast(err.message, 'error'));
+      })();
+    </script>
+  </body>
+</html>

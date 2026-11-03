@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The protocol — World Digital Protest</title>
+    <meta
+      name="description"
+      content="One protocol for every protest, in every country: peaceful by requirement, no personal data, no travel required, honest numbers, enforced uniformly."
+    />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main class="wrap-narrow">
+      <section class="section" style="margin-top: 1.5rem">
+        <span class="badge peace">Protocol <span id="proto-version">1.0</span></span>
+        <h1 id="proto-title" style="margin-top: 0.6rem">The World Digital Protest Protocol</h1>
+        <p class="muted" id="proto-preamble">
+          One protocol for every protest on this platform, for every participant, in every country.
+        </p>
+        <div class="notice info">
+          <strong>Why one protocol, not many.</strong> A protest of millions that never gathers in
+          one place has no crowd to police, no stewards, no local rules. The only thing holding the
+          standard together is that every participant, everywhere, accepts exactly the same rules.
+          There is noorganiser override, no country-specific version, and no way to join partially.
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="articles" id="articles"></div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>How the protocol is enforced</h3>
+          <div class="grid grid-2 mt-2">
+            <div class="notice info">
+              <strong>Before publishing</strong><br />
+              Calls to violence are blocked when a protest or update is created. The screen returns
+              the exact phrases that failed, so they can be reworded.
+            </div>
+            <div class="notice info">
+              <strong>At the point of joining</strong><br />
+              All four agreements are required. A join without them is rejected and not counted.
+            </div>
+            <div class="notice info">
+              <strong>While running</strong><br />
+              Anyone can report a breach from any protest page. Reports are queued for review
+              against these articles.
+            </div>
+            <div class="notice info">
+              <strong>Offline joins</strong><br />
+              Offline envelopes carry the protocol version and hash they accepted. An envelope made
+              under a different protocol is rejected on sync.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>Wire contract</h3>
+          <p class="card-sub">
+            The protocol is also a technical contract, so queued offline data cannot be replayed
+            under different rules.
+          </p>
+          <table>
+            <tbody>
+              <tr>
+                <td class="muted">Protocol version</td>
+                <td class="mono" id="proto-v">—</td>
+              </tr>
+              <tr>
+                <td class="muted">Content hash</td>
+                <td class="mono" id="proto-hash" style="word-break: break-all">—</td>
+              </tr>
+              <tr>
+                <td class="muted">Required agreements</td>
+                <td id="proto-consent-count">4</td>
+              </tr>
+              <tr>
+                <td class="muted">Age bands</td>
+                <td id="proto-ages">—</td>
+              </tr>
+              <tr>
+                <td class="muted">Gender options</td>
+                <td id="proto-genders">—</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="row mt-2">
+            <button class="btn btn-secondary btn-sm" id="btn-copy-json">Copy protocol JSON</button>
+            <a class="btn btn-ghost btn-sm" href="/api/protocol" target="_blank" rel="noopener">Raw endpoint</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>Language screening</h3>
+          <p class="card-sub">
+            Try the same screening that the platform runs before publishing a protest.
+          </p>
+          <label class="field">
+            <span class="field-label">Text to screen</span>
+            <textarea id="screen-input" placeholder="Paste a headline or reason…"></textarea>
+          </label>
+          <button class="btn btn-secondary btn-sm" id="btn-screen">Screen text</button>
+          <div id="screen-result" class="mt-2"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="/assets/js/core.js"></script>
+    <script src="/assets/js/shell.js"></script>
+    <script>
+      (function () {
+        const { $, el, api, escapeHtml, toast } = window.WDP;
+        let protocol = null;
+
+        function articleCard(a) {
+          return el('div', { class: 'article' }, [
+            el('h3', {}, [el('span', { class: 'num', text: a.number }), a.title]),
+            el('p', { class: 'summary', text: a.summary }),
+            el('ul', {}, a.rules.map((r) => el('li', { text: r }))),
+          ]);
+        }
+
+        async function boot() {
+          try {
+            const data = await api.protocol();
+            protocol = data.protocol;
+            $('#proto-version').textContent = protocol.version;
+            $('#proto-title').textContent = protocol.title;
+            $('#proto-preamble').textContent = protocol.preamble;
+            const host = $('#articles');
+            host.innerHTML = '';
+            protocol.articles.forEach((a) => host.append(articleCard(a)));
+            $('#proto-v').textContent = protocol.version;
+            $('#proto-hash').textContent = data.hash;
+            $('#proto-consent-count').textContent = `${protocol.consent.length} required`;
+            $('#proto-ages').textContent = protocol.ageBands.join(' · ');
+            $('#proto-genders').textContent = protocol.genders.map((g) => g.label).join(' · ');
+          } catch (err) {
+            toast(`Could not load protocol: ${err.message}`, 'error');
+          }
+        }
+
+        $('#btn-copy-json').addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(JSON.stringify(protocol, null, 2));
+            toast('Protocol JSON copied.', 'success');
+          } catch {
+            toast('Copy failed — open the raw endpoint instead.', 'warn');
+          }
+        });
+
+        $('#btn-screen').addEventListener('click', async () => {
+          const text = $('#screen-input').value;
+          const host = $('#screen-result');
+          try {
+            const { result } = await api.screen({ headline: text, reason: text });
+            host.innerHTML = result.ok
+              ? '<div class="notice success">No violent language detected. This text could be published.</div>'
+              : `<div class="notice error"><strong>Blocked.</strong> Protocol articles 1 and 8 reject this text. Flagged: ${result.flags
+                  .map((f) => `<span class="mono">${escapeHtml(f)}</span>`)
+                  .join(', ')}</div>`;
+          } catch (err) {
+            host.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+          }
+        });
+
+        boot();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Join a protest — World Digital Protest</title>
+    <meta
+      name="description"
+      content="Join a worldwide digital protest in under a minute. No name, no email, no travel: accept the protocol, pick an age range and gender, and you are counted."
+    />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main class="wrap-narrow">
+      <div id="page-alert" class="section" style="margin-top: 1rem"></div>
+
+      <!-- Step 1: pick a protest -->
+      <section id="step-pick" class="section">
+        <h1>Join a protest</h1>
+        <p class="muted">
+          Choose an open protest. You will be counted in your country, city and area, and nowhere
+          more precisely than that.
+        </p>
+        <div class="stack" id="pick-list">
+          <div class="card"><span class="spinner"></span> Loading open protests…</div>
+        </div>
+        <div class="notice info mt-3">
+          Joining from a poster, a QR code, a Bluetooth beacon or a nearby hotspot?
+          <a href="offline.html">Use the offline join</a> — it works with no internet at all.
+        </div>
+      </section>
+
+      <!-- Step 2: the form -->
+      <section id="step-form" class="section hidden">
+        <div class="card" style="padding: 1.4rem">
+          <div class="row-between">
+            <span class="badge peace">Protocol 1.0</span>
+            <span class="dim" id="mode-label">Joining over the internet</span>
+          </div>
+          <h1 id="protest-headline" style="font-size: clamp(1.4rem, 3vw, 2rem); margin-top: 0.6rem">
+            Loading…
+          </h1>
+          <p class="muted" id="protest-reason" style="font-size: 0.9rem"></p>
+        </div>
+
+        <form id="join-form" class="stack mt-2" novalidate>
+          <div class="card">
+            <h3>1. The protocol you are accepting</h3>
+            <p class="card-sub">
+              One protocol for every protest, in every country. Peaceful conduct is the entry
+              requirement — not a preference.
+            </p>
+            <div id="protocol-summary" class="articles"></div>
+            <div class="row mt-2">
+              <a class="btn btn-ghost btn-sm" href="protocol.html" target="_blank" rel="noopener"
+                >Read the full protocol</a
+              >
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>2. Two questions</h3>
+            <p class="card-sub">
+              This is all we ask. No name, no email, no phone number, no address, no ID.
+            </p>
+
+            <label class="field">
+              <span class="field-label">Age</span>
+              <input
+                type="number"
+                id="age"
+                name="age"
+                min="13"
+                max="120"
+                inputmode="numeric"
+                placeholder="e.g. 28"
+                required
+              />
+              <span class="help">
+                Only the age range is stored (e.g. 25-34). Your exact age is not kept.
+              </span>
+            </label>
+
+            <span class="field-label">Gender</span>
+            <div class="choice-group" id="gender-group" role="radiogroup" aria-label="Gender"></div>
+          </div>
+
+          <div class="card">
+            <h3>3. Where you are joining from</h3>
+            <p class="card-sub">
+              Used only to add you to a country, city and area count. No coordinates, addresses or
+              device location history are stored.
+            </p>
+
+            <div class="grid grid-2" style="gap: 0.9rem">
+              <label class="field" style="margin: 0">
+                <span class="field-label">Country</span>
+                <select id="country" name="country"></select>
+              </label>
+              <label class="field" style="margin: 0">
+                <span class="field-label">City / area</span>
+                <select id="city" name="city"></select>
+              </label>
+            </div>
+
+            <div class="row mt-2">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-geo">
+                Use my approximate area
+              </button>
+              <span class="dim" id="geo-status">Optional. Resolved to the nearest city, then discarded.</span>
+            </div>
+            <div id="location-preview" class="notice info mt-2 hidden"></div>
+          </div>
+
+          <div class="card">
+            <h3>4. Accept the protocol</h3>
+            <p class="card-sub">All four agreements are required to be counted.</p>
+            <div class="consent" id="consent-list"></div>
+          </div>
+
+          <div class="row-between">
+            <span class="dim" id="form-status"></span>
+            <button class="btn btn-primary" type="submit" id="btn-submit">Join peacefully</button>
+          </div>
+          <div id="form-error"></div>
+        </form>
+      </section>
+
+      <!-- Step 3: done -->
+      <section id="step-done" class="section hidden">
+        <div class="card" style="padding: 1.6rem">
+          <span class="badge live">You are counted</span>
+          <h1 style="font-size: clamp(1.5rem, 3.4vw, 2.2rem); margin-top: 0.7rem">
+            Welcome, <span id="done-name">—</span>
+          </h1>
+          <p class="muted" id="done-location"></p>
+
+          <div class="grid grid-4 mt-2">
+            <div class="stat accent">
+              <div class="stat-label">Worldwide now</div>
+              <div class="stat-value" id="done-total">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Your channel</div>
+              <div class="stat-value" style="font-size: 1.2rem" id="done-channel">Internet</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Age range</div>
+              <div class="stat-value" style="font-size: 1.2rem" id="done-age">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Gender</div>
+              <div class="stat-value" style="font-size: 1.2rem" id="done-gender">—</div>
+            </div>
+          </div>
+
+          <div id="done-offline" class="hidden notice warn mt-2"></div>
+
+          <div class="row mt-2">
+            <a class="btn btn-primary btn-sm" id="done-dashboard" href="#">See the live worldwide count</a>
+            <button class="btn btn-secondary btn-sm" id="btn-invite">Copy invite link</button>
+            <a class="btn btn-ghost btn-sm" href="protocol.html">Read the protocol</a>
+          </div>
+
+          <div class="notice info mt-3">
+            <strong>Your name was generated, not chosen.</strong> It is not linked to you, and
+            nothing you entered can identify you. If you lose this name, you can rejoin — the same
+            device always gets the same name for the same protest.
+          </div>
+        </div>
+
+        <div class="card mt-2">
+          <h3>Bring others in without internet</h3>
+          <p class="card-sub">
+            Show this code to people nearby. They can scan it, or enter the 6-character code, and
+            join from a hotspot or fully offline.
+          </p>
+          <div class="row" style="align-items: flex-start; gap: 1.25rem">
+            <div class="qr-box" id="done-qr"></div>
+            <div style="min-width: 220px">
+              <div class="field-label">Pairing code</div>
+              <div class="mono" id="done-code" style="font-size: 1.6rem; letter-spacing: 0.18em">—</div>
+              <div class="help" id="done-code-expiry"></div>
+              <div class="row mt-2">
+                <button class="btn btn-secondary btn-sm" id="btn-copy-code">Copy code</button>
+                <a class="btn btn-ghost btn-sm" id="done-offline-link" href="offline.html">Offline join</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="/assets/js/core.js"></script>
+    <script src="/assets/js/shell.js"></script>
+    <script>
+      (function () {
+        const {
+          $,
+          el,
+          api,
+          toast,
+          escapeHtml,
+          fmt,
+          deviceSeed,
+          store,
+          genderLabel,
+          channelLabel,
+          live,
+        } = window.WDP;
+
+        const params = new URLSearchParams(location.search);
+        let protestId = params.get('p') || params.get('id') || '';
+        const pairingCode = (params.get('c') || '').toUpperCase();
+        let protest = null;
+        let protocol = null;
+        let countries = [];
+        let selected = { country: '', cityId: '', cityName: '', region: '', lat: null, lng: null };
+        let gender = '';
+        let streamHandle = null;
+        const OFFLINE_QUEUE = 'wdp.offline.queue';
+
+        const mode = pairingCode ? 'offline' : 'web';
+
+        function setAlert(kind, html) {
+          const host = $('#page-alert');
+          host.innerHTML = '';
+          if (html) host.append(el('div', { class: `notice ${kind}`, html }));
+        }
+
+        // ------------------------------------------------------------ step 1
+        async function renderPicker() {
+          try {
+            const { protests } = await api.protests(false);
+            const host = $('#pick-list');
+            host.innerHTML = '';
+            const open = protests.filter((p) => p.phase !== 'ended' && p.phase !== 'cancelled');
+            if (!open.length) {
+              host.append(
+                el('div', { class: 'card' }, [
+                  el('h3', { text: 'No protests are open right now' }),
+                  el('p', {
+                    class: 'muted',
+                    text: 'When a protest opens, it appears here for everyone in the world at the same moment.',
+                  }),
+                  el('a', { class: 'btn btn-primary btn-sm', href: 'create.html', text: 'Start a protest' }),
+                ])
+              );
+              return;
+            }
+            for (const p of open) {
+              host.append(
+                el('div', { class: 'card protest-card' }, [
+                  el('div', { class: 'meta' }, [
+                    p.phase === 'live'
+                      ? '<span class="badge live">Live now</span>'
+                      : '<span class="badge upcoming">Upcoming</span>',
+                    el('span', { class: 'badge peace', text: 'Protocol 1.0' }),
+                  ]),
+                  el('h3', { text: p.headline }),
+                  el('p', { class: 'reason', text: p.reason }),
+                  el('div', { class: 'card-stats' }, [
+                    el('span', { html: `<b>${fmt(p.totals?.total || 0)}</b> joined` }),
+                    el('span', { html: `<b>${fmt(p.totals?.countries || 0)}</b> countries` }),
+                  ]),
+                  el('div', { class: 'row mt-1' }, [
+                    el('a', {
+                      class: 'btn btn-primary btn-sm',
+                      href: `join.html?p=${encodeURIComponent(p.id)}`,
+                      text: 'Join this protest',
+                    }),
+                    el('a', {
+                      class: 'btn btn-secondary btn-sm',
+                      href: `protest.html?id=${encodeURIComponent(p.id)}`,
+                      text: 'Live dashboard',
+                    }),
+                  ]),
+                ])
+              );
+            }
+          } catch (err) {
+            $('#pick-list').innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+          }
+        }
+
+        // ------------------------------------------------------------ step 2
+        function renderProtocol(proto) {
+          const host = $('#protocol-summary');
+          host.innerHTML = '';
+          const articles = proto.articles || [];
+          // Keep the join screen scannable: show the first four articles in full,
+          // and summarise the rest behind a details element.
+          const show = articles.slice(0, 4);
+          const rest = articles.slice(4);
+          const build = (article) =>
+            el('div', { class: 'article' }, [
+              el('h3', {}, [el('span', { class: 'num', text: article.number }), article.title]),
+              el('p', { class: 'summary', text: article.summary }),
+              el('ul', {}, article.rules.map((r) => el('li', { text: r }))),
+            ]);
+          show.forEach((a) => host.append(build(a)));
+          if (rest.length) {
+            const details = el('details', { class: 'article' }, [
+              el('summary', {
+                style: 'cursor:pointer;font-weight:650',
+                text: `Articles ${rest[0].number}–${rest[rest.length - 1].number}: ${
+                  rest.map((r) => r.title).join(', ')
+                }`,
+              }),
+            ]);
+            const inner = el('div', { class: 'mt-2' });
+            rest.forEach((a) => inner.append(build(a)));
+            details.append(inner);
+            host.append(details);
+          }
+        }
+
+        function renderConsent(proto) {
+          const host = $('#consent-list');
+          host.innerHTML = '';
+          for (const item of proto.consent) {
+            host.append(
+              el('label', {}, [
+                el('input', { type: 'checkbox', name: item.key, required: true }),
+                el('span', { text: item.label }),
+              ])
+            );
+          }
+        }
+
+        function renderGenders(proto) {
+          const host = $('#gender-group');
+          host.innerHTML = '';
+          for (const g of proto.genders) {
+            const label = el('label', { class: 'choice' }, [
+              el('input', { type: 'radio', name: 'gender', value: g.key }),
+              el('span', { text: g.label }),
+            ]);
+            label.querySelector('input').addEventListener('change', () => {
+              gender = g.key;
+            });
+            host.append(label);
+          }
+        }
+
+        async function loadCountries() {
+          const { countries: list } = await api.countries();
+          countries = list;
+          const select = $('#country');
+          select.innerHTML = '<option value="">Select a country…</option>';
+          for (const c of list) {
+            select.append(el('option', { value: c.iso2, text: `${c.name} (${c.iso2})` }));
+          }
+        }
+
+        async function loadCities(code, preselect) {
+          const select = $('#city');
+          select.innerHTML = '<option value="">Select a city / area…</option>';
+          if (!code) return;
+          const { cities } = await api.cities('', code);
+          for (const c of cities) {
+            select.append(
+              el('option', {
+                value: c.id,
+                text: c.region ? `${c.name} — ${c.region}` : c.name,
+              })
+            );
+          }
+          if (preselect) select.value = preselect;
+        }
+
+        function updateLocationPreview() {
+          const box = $('#location-preview');
+          if (!selected.country) {
+            box.classList.add('hidden');
+            return;
+          }
+          const country = countries.find((c) => c.iso2 === selected.country);
+          box.classList.remove('hidden');
+          box.innerHTML = `You will be counted in <strong>${escapeHtml(
+            selected.cityName || 'your country'
+          )}</strong>, ${escapeHtml(country ? country.name : selected.country)}${
+            selected.region ? ` · ${escapeHtml(selected.region)}` : ''
+          }. ${selected.lat ? 'Resolved from an approximate position and not stored.' : ''}`;
+        }
+
+        async function showForm() {
+          $('#step-pick').classList.add('hidden');
+          $('#step-form').classList.remove('hidden');
+          $('#protest-headline').textContent = protest.headline;
+          $('#protest-reason').textContent = protest.reason;
+          $('#mode-label').textContent =
+            mode === 'offline'
+              ? `Offline join · code ${pairingCode}`
+              : 'Joining over the internet';
+
+          const [{ protocol: proto }] = await Promise.all([api.protocol(), loadCountries()]);
+          protocol = proto;
+          renderProtocol(proto);
+          renderConsent(proto);
+          renderGenders(proto);
+
+          if (protest.phase === 'upcoming') {
+            setAlert(
+              'warn',
+              `This protest has not started yet. You can still join now — you will be ready when it opens.`
+            );
+          }
+          if (protest.phase === 'ended') {
+            setAlert('error', 'This protest has finished and is closed to new joiners.');
+            $('#btn-submit').disabled = true;
+          }
+        }
+
+        // ------------------------------------------------------------- geo
+        $('#btn-geo')?.addEventListener('click', () => {
+          const status = $('#geo-status');
+          if (!navigator.geolocation) {
+            status.textContent = 'This browser cannot share an approximate position. Pick a city instead.';
+            return;
+          }
+          status.innerHTML = '<span class="spinner"></span> Locating…';
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              // Rounded to ~1 km before it leaves the device. The server reduces
+              // it to a city and the coordinate is never stored.
+              const lat = Math.round(pos.coords.latitude * 100) / 100;
+              const lng = Math.round(pos.coords.longitude * 100) / 100;
+              try {
+                const { location } = await api.resolve(lat, lng);
+                selected.country = location.country;
+                selected.cityId = location.cityId;
+                selected.cityName = location.city;
+                selected.region = location.region;
+                selected.lat = null;
+                selected.lng = null;
+                $('#country').value = location.country;
+                await loadCities(location.country, location.cityId);
+                status.textContent = 'Resolved to your nearest city. The position itself was discarded.';
+                updateLocationPreview();
+              } catch (err) {
+                status.textContent = `Could not resolve your area (${err.message}). Pick a city instead.`;
+              }
+            },
+            () => {
+              status.textContent = 'Position not shared. Pick a city from the list instead.';
+            },
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+          );
+        });
+
+        // ------------------------------------------------------------ submit
+        async function resolveLocation(payload) {
+          if (selected.cityId) return { cityId: selected.cityId, country: selected.country };
+          if (selected.lat != null) return { lat: selected.lat, lng: selected.lng, country: selected.country };
+          return { country: selected.country, city: selected.cityName || '' };
+        }
+
+        function collectConsent(form) {
+          const consent = {};
+          for (const key of ['nonViolence', 'noPersonalData', 'peacefulOnly', 'oneProtocol']) {
+            const input = form.querySelector(`input[name="${key}"]`);
+            consent[key] = Boolean(input && input.checked);
+          }
+          return consent;
+        }
+
+        $('#join-form')?.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const form = e.target;
+          const errorHost = $('#form-error');
+          errorHost.innerHTML = '';
+          const btn = $('#btn-submit');
+
+          const age = Number(form.elements.age.value);
+          if (!age || age < 13 || age > 120) {
+            errorHost.innerHTML = '<div class="notice error">Enter an age between 13 and 120.</div>';
+            return;
+          }
+          if (!gender) {
+            errorHost.innerHTML = '<div class="notice error">Select a gender option to continue.</div>';
+            return;
+          }
+          if (!selected.country) {
+            errorHost.innerHTML = '<div class="notice error">Choose the country you are joining from.</div>';
+            return;
+          }
+
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spinner"></span> Joining…';
+
+          const location = await resolveLocation();
+          const body = {
+            protocolVersion: '1.0',
+            consent: collectConsent(form),
+            age,
+            gender,
+            deviceSeed: deviceSeed(),
+            location,
+            channel: mode === 'offline' ? 'offline-queue' : 'web',
+          };
+
+          try {
+            let data;
+            if (mode === 'offline') {
+              const full = await api.beacon(protestId);
+              data = await api.joinOffline({
+                ...body,
+                beacon: full.payload,
+                channel: 'beacon-qr',
+              });
+            } else {
+              data = await api.join(protestId, body);
+            }
+            showDone(data);
+          } catch (err) {
+            if (!navigator.onLine && mode !== 'offline') {
+              // No connection: sign and queue the join for later sync.
+              try {
+                const env = await fetch('/api/protests/' + encodeURIComponent(protestId) + '/beacon')
+                  .then((r) => r.json())
+                  .catch(() => null);
+                queueOfflineJoin(body);
+                errorHost.innerHTML =
+                  '<div class="notice warn">You are offline. Your join has been saved on this device and will be submitted automatically when you reconnect. <a href="offline.html">Details</a></div>';
+              } catch {
+                errorHost.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+              }
+            } else {
+              errorHost.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+            }
+            btn.disabled = false;
+            btn.textContent = 'Join peacefully';
+          }
+        });
+
+        function queueOfflineJoin(body) {
+          const queue = store.get(OFFLINE_QUEUE, []);
+          queue.push({ protestId, body, queuedAt: new Date().toISOString() });
+          store.set(OFFLINE_QUEUE, queue);
+          toast('Join saved offline. It will sync when you reconnect.', 'success');
+        }
+
+        // -------------------------------------------------------------- done
+        function showDone(data) {
+          const j = data.joiner || {};
+          $('#step-form').classList.add('hidden');
+          $('#step-done').classList.remove('hidden');
+          $('#done-name').textContent = j.name || '—';
+          $('#done-location').textContent = [j.city, j.region, j.countryName || j.country]
+            .filter(Boolean)
+            .join(' · ');
+          $('#done-age').textContent = j.ageBand || '—';
+          $('#done-gender').textContent = genderLabel(j.gender || gender);
+          $('#done-channel').textContent = channelLabel(j.channel || 'web');
+          $('#done-dashboard').href = `protest.html?id=${encodeURIComponent(protestId)}`;
+
+          if (data.duplicate) {
+            toast('You had already joined this protest — same name, same count.', 'info');
+          }
+
+          // Live total on the confirmation screen.
+          const applyKpi = (kpi) => {
+            if (kpi) $('#done-total').textContent = fmt(kpi.total);
+          };
+          api.kpi(protestId).then(({ kpi }) => applyKpi(kpi)).catch(() => {});
+          streamHandle = live(protestId, { kpi: (d) => applyKpi(d.kpi) });
+
+          // Pairing code + QR so neighbours can join without internet.
+          api
+            .beacon(protestId)
+            .then((beacon) => {
+              $('#done-code').textContent = beacon.beacon.c;
+              $('#done-code-expiry').textContent = `Valid until ${new Date(
+                beacon.expiresAt
+              ).toLocaleTimeString()} — it refreshes automatically.`;
+              const img = el('img', { src: beacon.qrJoin, alt: 'QR code to join this protest' });
+              $('#done-qr').innerHTML = '';
+              $('#done-qr').append(img);
+              $('#btn-copy-code').addEventListener('click', async () => {
+                try {
+                  await navigator.clipboard.writeText(beacon.beacon.c);
+                  toast('Pairing code copied.', 'success');
+                } catch {
+                  window.prompt('Pairing code:', beacon.beacon.c);
+                }
+              });
+            })
+            .catch(() => {
+              $('#done-code').textContent = 'unavailable';
+            });
+
+          $('#btn-invite').addEventListener('click', async () => {
+            const url = `${location.origin}/join.html?p=${encodeURIComponent(protestId)}`;
+            try {
+              await navigator.clipboard.writeText(url);
+              toast('Invite link copied.', 'success');
+            } catch {
+              window.prompt('Invite link:', url);
+            }
+          });
+
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // -------------------------------------------------------------- boot
+        async function boot() {
+          if (!protestId && pairingCode) {
+            try {
+              const { beacon, protest: found } = await api.inspect(pairingCode);
+              protestId = found ? found.id : beacon.p;
+            } catch (err) {
+              setAlert('error', escapeHtml(err.message));
+            }
+          }
+
+          if (!protestId) {
+            renderPicker();
+            return;
+          }
+
+          try {
+            const { protest: p } = await api.protest(protestId);
+            protest = p;
+          } catch (err) {
+            setAlert(
+              'error',
+              `This protest could not be loaded (${escapeHtml(err.message)}). <a href="protests.html">Browse open protests</a>.`
+            );
+            return;
+          }
+
+          await showForm();
+
+          $('#country').addEventListener('change', async (e) => {
+            selected.country = e.target.value;
+            selected.cityId = '';
+            selected.cityName = '';
+            selected.region = '';
+            selected.lat = null;
+            selected.lng = null;
+            await loadCities(selected.country);
+            updateLocationPreview();
+          });
+
+          $('#city').addEventListener('change', async (e) => {
+            const id = e.target.value;
+            selected.cityId = id;
+            if (!id) {
+              selected.cityName = '';
+              selected.region = '';
+            } else {
+              const opt = e.target.selectedOptions[0];
+              const text = opt ? opt.textContent : '';
+              const [name, region] = text.split(' — ');
+              selected.cityName = name;
+              selected.region = region || '';
+            }
+            updateLocationPreview();
+          });
+        }
+
+        boot();
+
+        window.addEventListener('online', async () => {
+          const queue = store.get(OFFLINE_QUEUE, []);
+          if (!queue.length) return;
+          toast('Back online — syncing your offline join…', 'info');
+          const remaining = [];
+          for (const item of queue) {
+            try {
+              await api.join(item.protestId, item.body);
+            } catch {
+              remaining.push(item);
+            }
+          }
+          store.set(OFFLINE_QUEUE, remaining);
+          if (remaining.length < queue.length) toast('Offline join synced and counted.', 'success');
+        });
+
+        window.addEventListener('beforeunload', () => {
+          if (streamHandle) streamHandle.close();
+        });
+      })();
+    </script>
+  </body>
+</html>

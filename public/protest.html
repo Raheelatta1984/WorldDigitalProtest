@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live protest dashboard — World Digital Protest</title>
+    <meta
+      name="description"
+      content="Live worldwide KPIs for a running digital protest: joiners by country, city, area, gender and age, streamed as they join."
+    />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main class="wrap">
+      <div id="page-alert"></div>
+
+      <section id="protest-head" class="section" style="margin-top: 1.5rem">
+        <div class="card" style="padding: 1.5rem">
+          <div class="row" style="justify-content: space-between">
+            <div class="row" style="gap: 0.45rem" id="phase-badges">
+              <span class="badge"><span class="spinner"></span> Loading</span>
+            </div>
+            <div class="row" style="gap: 0.4rem">
+              <button class="btn btn-secondary btn-sm" id="btn-share">Copy share link</button>
+              <a class="btn btn-primary btn-sm" id="btn-join" href="join.html">Join this protest</a>
+            </div>
+          </div>
+          <h1 id="headline" style="margin: 0.75rem 0 0.5rem">Loading protest…</h1>
+          <p class="muted" id="reason" style="max-width: 80ch; margin-bottom: 0.75rem"></p>
+          <div class="row" style="gap: 1.25rem; font-size: 0.85rem" id="timing-row"></div>
+        </div>
+      </section>
+
+      <section class="section" style="margin-top: 1rem">
+        <div class="grid grid-4">
+          <div class="stat accent">
+            <div class="stat-label">Participants</div>
+            <div class="stat-value" id="kpi-total">—</div>
+            <div class="stat-foot" id="kpi-total-foot">worldwide, counted live</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Countries</div>
+            <div class="stat-value" id="kpi-countries">—</div>
+            <div class="stat-foot" id="kpi-countries-foot">of 245 supported</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Cities &amp; areas</div>
+            <div class="stat-value" id="kpi-cities">—</div>
+            <div class="stat-foot" id="kpi-cities-foot">suburb-level detail</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Joining now</div>
+            <div class="stat-value" id="kpi-velocity">—</div>
+            <div class="stat-foot" id="kpi-velocity-foot">per minute, last 5 min</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid dashboard-grid">
+          <div class="stack">
+            <div class="map-shell">
+              <canvas id="world-map" height="420" aria-label="World map of participants by country"></canvas>
+              <div class="map-legend">
+                <span><span class="dot" style="background: #2ee6a8"></span>bubble size = participants</span>
+                <span id="map-updated">live</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="row-between">
+                <h3 style="margin: 0">Target progress</h3>
+                <span class="dim" id="target-label"></span>
+              </div>
+              <div class="progress mt-2" style="height: 12px">
+                <span id="target-bar" style="width: 0%"></span>
+              </div>
+              <div class="row-between mt-1 dim" style="font-size: 0.82rem">
+                <span class="muted" id="progress-text">—</span>
+                <span class="muted" id="estimate-text"></span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="row-between">
+                <h3 style="margin: 0">Arrivals per minute</h3>
+                <span class="dim">last 60 minutes</span>
+              </div>
+              <canvas id="spark" height="90" style="width: 100%; height: 90px; margin-top: 0.6rem"></canvas>
+            </div>
+
+            <div class="card">
+              <div class="row-between">
+                <h3 style="margin: 0">Live stream</h3>
+                <span class="dim" id="stream-status">not configured</span>
+              </div>
+              <p class="card-sub">
+                Each protest broadcasts on its own YouTube live channel. The KPI panel stays on
+                screen for the whole protest, until it finishes.
+              </p>
+              <div id="stream-frame" class="hidden" style="position: relative; padding-top: 56.25%">
+                <iframe
+                  id="stream-iframe"
+                  title="Live protest stream"
+                  style="position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 12px"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
+                ></iframe>
+              </div>
+              <div id="stream-empty" class="notice info">
+                No live video is attached to this protest yet. The dashboard numbers below are still
+                live and are what the stream overlay displays.
+              </div>
+              <div class="row mt-2">
+                <a class="btn btn-secondary btn-sm" id="stream-channel" href="#" target="_blank" rel="noopener"
+                  >Open YouTube channel</a
+                >
+                <a class="btn btn-ghost btn-sm" id="stream-overlay" href="#">KPI overlay view</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card">
+              <div class="row-between">
+                <h3 style="margin: 0">Joining right now</h3>
+                <span class="badge live" id="ticker-badge">live</span>
+              </div>
+              <div class="ticker mt-1" id="ticker">
+                <div class="dim">Waiting for the next arrival…</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>By continent</h3>
+              <div class="bars" id="bars-continent"><span class="dim">Loading…</span></div>
+            </div>
+
+            <div class="card">
+              <h3>By gender</h3>
+              <div class="bars" id="bars-gender"><span class="dim">Loading…</span></div>
+            </div>
+
+            <div class="card">
+              <h3>By age</h3>
+              <div class="bars" id="bars-age"><span class="dim">Loading…</span></div>
+            </div>
+
+            <div class="card">
+              <h3>How people joined</h3>
+              <div class="bars" id="bars-channel"><span class="dim">Loading…</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="row-between">
+              <h3 style="margin: 0">Countries</h3>
+              <input type="search" id="country-filter" placeholder="Filter countries…" style="max-width: 220px" />
+            </div>
+            <div class="table-scroll mt-1">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Country</th>
+                    <th>Continent</th>
+                    <th class="num">Joiners</th>
+                    <th class="num">Share</th>
+                  </tr>
+                </thead>
+                <tbody id="table-countries">
+                  <tr><td colspan="4" class="dim">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="row-between">
+              <h3 style="margin: 0">Cities &amp; areas</h3>
+              <span class="dim" id="city-count-label"></span>
+            </div>
+            <div class="table-scroll mt-1">
+              <table>
+                <thead>
+                  <tr>
+                    <th>City / area</th>
+                    <th>Country</th>
+                    <th class="num">Joiners</th>
+                  </tr>
+                </thead>
+                <tbody id="table-cities">
+                  <tr><td colspan="3" class="dim">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="row-between">
+              <h3 style="margin: 0">Regions / states</h3>
+              <span class="dim" id="region-count-label"></span>
+            </div>
+            <div class="table-scroll mt-1">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Region</th>
+                    <th>Country</th>
+                    <th class="num">Joiners</th>
+                  </tr>
+                </thead>
+                <tbody id="table-regions"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Report a breach of the protocol</h3>
+            <p class="card-sub">
+              Anyone can report violence, threats, doxxing or coordination of illegal activity. All
+              reports are reviewed against the same protocol.
+            </p>
+            <form id="report-form">
+              <label class="field">
+                <span class="field-label">What happened</span>
+                <select name="category">
+                  <option value="violence">Threat or call to violence</option>
+                  <option value="harassment">Harassment or intimidation</option>
+                  <option value="doxxing">Sharing someone's personal details</option>
+                  <option value="illegal">Coordinating illegal activity</option>
+                  <option value="misinformation">False numbers or fake material</option>
+                  <option value="other">Something else</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">Details</span>
+                <textarea
+                  name="detail"
+                  required
+                  minlength="10"
+                  placeholder="Describe what happened. Do not include anyone's personal details."
+                ></textarea>
+              </label>
+              <label class="field">
+                <span class="field-label">Protester name involved (optional)</span>
+                <input type="text" name="joinerName" placeholder="e.g. Quiet Willow #4192" />
+              </label>
+              <button class="btn btn-secondary" type="submit">Submit report</button>
+            </form>
+            <div id="report-result" class="mt-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>Test data notice</h3>
+          <p class="card-sub">
+            Some participants in a pre-launch protest are injected so global numbers can be
+            validated. They are always counted and labelled separately. Open the
+            <a href="testlab.html">test lab</a> to inject or clear them.
+          </p>
+          <div class="row">
+            <span class="badge injected" id="injected-badge">injected: —</span>
+            <span class="badge" id="real-badge">real: —</span>
+            <a class="btn btn-ghost btn-sm" href="testlab.html">Open test lab</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="/assets/js/core.js"></script>
+    <script src="/assets/js/shell.js"></script>
+    <script>
+      (function () {
+        const {
+          $,
+          el,
+          fmt,
+          pct,
+          compact,
+          escapeHtml,
+          api,
+          live,
+          createMap,
+          toast,
+          timeAgo,
+          formatDateTime,
+          relativeToNow,
+          genderLabel,
+          channelLabel,
+        } = window.WDP;
+
+        const params = new URLSearchParams(location.search);
+        const protestId = params.get('id') || params.get('p');
+        let map = null;
+        let current = null;
+        let kpi = null;
+        let stream = null;
+
+        const CONTINENT_COLORS = {
+          Asia: '',
+          Africa: 'amber',
+          Europe: '',
+          'North America': '',
+          'South America': 'violet',
+          Oceania: 'amber',
+          Other: 'rose',
+        };
+
+        function alertBox(kind, html) {
+          const host = $('#page-alert');
+          host.innerHTML = '';
+          if (html) host.append(el('div', { class: `notice ${kind}`, html }));
+        }
+
+        if (!protestId) {
+          alertBox(
+            'warn',
+            'No protest selected. Open a protest from the <a href="protests.html">live protests</a> list.'
+          );
+        }
+
+        // ---------------------------------------------------------- rendering
+        function renderBars(hostId, items, options) {
+          const host = $(`#${hostId}`);
+          host.innerHTML = '';
+          if (!items || !items.length) {
+            host.append(el('span', { class: 'dim', text: 'No data yet.' }));
+            return;
+          }
+          const max = Math.max(...items.map((i) => i.count)) || 1;
+          for (const item of items.slice(0, options && options.limit ? options.limit : 14)) {
+            const label = item.label || item.name || item.key;
+            host.append(
+              el('div', { class: 'bar-row' }, [
+                el('span', { class: 'bar-name', title: label, text: label }),
+                el('span', {
+                  class: 'bar-track',
+                  html: `<span class="bar-fill ${(options && options.colors && options.colors[item.key]) || ''}" style="width:${Math.max(2, (item.count / max) * 100)}%"></span>`,
+                }),
+                el('span', { class: 'bar-value', text: fmt(item.count) }),
+              ])
+            );
+          }
+        }
+
+        function renderTable(tbodyId, rows, build) {
+          const tbody = $(`#${tbodyId}`);
+          tbody.innerHTML = '';
+          if (!rows.length) {
+            tbody.append(el('tr', {}, el('td', { colspan: 4, class: 'dim', text: 'No data yet.' })));
+            return;
+          }
+          const frag = document.createDocumentFragment();
+          rows.forEach((row, i) => frag.append(build(row, i)));
+          tbody.append(frag);
+        }
+
+        function countryRow(c) {
+          return el('tr', {}, [
+            el('td', {}, [
+              el('div', { style: 'display:flex;align-items:center;gap:.5rem' }, [
+                el('span', { class: 'dot', style: 'background:#2ee6a8;flex:0 0 auto' }),
+                el('span', { text: c.name }),
+              ]),
+            ]),
+            el('td', { class: 'dim', text: c.continent || '' }),
+            el('td', { class: 'num', text: fmt(c.count) }),
+            el('td', { class: 'num dim', text: pct(c.share) }),
+          ]);
+        }
+
+        function cityRow(c) {
+          return el('tr', {}, [
+            el('td', {}, [
+              el('div', { text: c.name }),
+              c.region
+                ? el('div', { class: 'dim', style: 'font-size:.75rem', text: c.region })
+                : null,
+            ]),
+            el('td', { class: 'dim', text: c.countryName }),
+            el('td', { class: 'num', text: fmt(c.count) }),
+          ]);
+        }
+
+        function renderSpark(series) {
+          const canvas = $('#spark');
+          const dpr = window.devicePixelRatio || 1;
+          const rect = canvas.getBoundingClientRect();
+          canvas.width = rect.width * dpr;
+          canvas.height = 90 * dpr;
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if (!series || !series.length) return;
+          const max = Math.max(1, ...series.map((s) => s.count));
+          const w = canvas.width;
+          const h = canvas.height;
+          const step = w / Math.max(1, series.length - 1);
+
+          ctx.beginPath();
+          series.forEach((point, i) => {
+            const x = i * step;
+            const y = h - (point.count / max) * (h - 12 * dpr) - 4 * dpr;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.lineWidth = 2 * dpr;
+          ctx.strokeStyle = '#2ee6a8';
+          ctx.stroke();
+
+          ctx.lineTo(w, h);
+          ctx.lineTo(0, h);
+          ctx.closePath();
+          const grad = ctx.createLinearGradient(0, 0, 0, h);
+          grad.addColorStop(0, 'rgba(46,230,168,.35)');
+          grad.addColorStop(1, 'rgba(46,230,168,0)');
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(147,164,193,.8)';
+          ctx.font = `${10 * dpr}px -apple-system, Segoe UI, sans-serif`;
+          ctx.fillText(`${max} peak/min`, 4 * dpr, 12 * dpr);
+        }
+
+        // ------------------------------------------------------------- render
+        function renderHeader() {
+          const p = current;
+          $('#headline').textContent = p.headline;
+          $('#reason').textContent = p.reason;
+          $('#btn-join').href = `join.html?p=${encodeURIComponent(p.id)}`;
+          $('#stream-overlay').href = `overlay.html?id=${encodeURIComponent(p.id)}`;
+
+          const badges = $('#phase-badges');
+          badges.innerHTML = '';
+          const phaseBadge =
+            p.phase === 'live'
+              ? '<span class="badge live">Live now</span>'
+              : p.phase === 'upcoming'
+              ? `<span class="badge upcoming">Opens ${escapeHtml(relativeToNow(p.startsAt))}</span>`
+              : p.phase === 'cancelled'
+              ? '<span class="badge ended">Cancelled</span>'
+              : '<span class="badge ended">Finished</span>';
+          badges.insertAdjacentHTML(
+            'beforeend',
+            `${phaseBadge}
+             <span class="badge peace">Peaceful by protocol</span>
+             <span class="badge">Protocol ${escapeHtml(p.protocolVersion || '1.0')}</span>
+             ${p.category ? `<span class="badge">${escapeHtml(p.category)}</span>` : ''}`
+          );
+
+          const timing = $('#timing-row');
+          timing.innerHTML = '';
+          timing.append(
+            el('span', { class: 'muted', html: `Started ${escapeHtml(formatDateTime(p.startsAt))}` }),
+            el('span', { class: 'muted', html: `Ends ${escapeHtml(formatDateTime(p.endsAt))}` }),
+            el('span', { class: 'muted', html: `Target ${fmt(p.targetJoiners)}` })
+          );
+
+          // Live stream wiring
+          const yt = p.youtube || {};
+          const channelHref = yt.channelUrl || 'https://www.youtube.com/@WorldDigitalProtest';
+          $('#stream-channel').href = channelHref;
+          if (yt.videoId) {
+            $('#stream-frame').classList.remove('hidden');
+            $('#stream-empty').classList.add('hidden');
+            $('#stream-iframe').src = `https://www.youtube.com/embed/${encodeURIComponent(
+              yt.videoId
+            )}?autoplay=1&mute=1&rel=0`;
+            $('#stream-status').textContent = yt.live ? 'live video attached' : 'video attached';
+          } else {
+            $('#stream-frame').classList.add('hidden');
+            $('#stream-empty').classList.remove('hidden');
+            $('#stream-status').textContent = 'dashboard-only (no video attached)';
+          }
+
+          document.title = `${p.headline} — live — World Digital Protest`;
+        }
+
+        function renderKpi(next) {
+          if (!next) return;
+          kpi = next;
+          $('#kpi-total').textContent = fmt(next.total);
+          $('#kpi-total-foot').textContent = `${fmt(next.real)} verified joins · ${fmt(
+            next.injected
+          )} injected test`;
+          $('#kpi-countries').textContent = fmt(next.countryCount);
+          $('#kpi-countries-foot').textContent = `of 245 supported countries`;
+          $('#kpi-cities').textContent = fmt(next.cityCount);
+          $('#kpi-cities-foot').textContent = `${fmt(next.regionCount)} regions / states`;
+          $('#kpi-velocity').textContent = fmt(next.velocity.perMinute);
+          $('#kpi-velocity-foot').textContent = `${fmt(next.velocity.last5)} in the last 5 minutes`;
+
+          $('#injected-badge').textContent = `injected: ${fmt(next.injected)}`;
+          $('#real-badge').textContent = `real: ${fmt(next.real)}`;
+
+          $('#target-bar').style.width = `${Math.min(100, next.progress)}%`;
+          $('#target-label').textContent = `${pct(next.progress)} of target`;
+          $('#progress-text').textContent = `${fmt(next.total)} of ${fmt(current.targetJoiners)}`;
+          const remaining = Math.max(0, current.targetJoiners - next.total);
+          const rate = next.velocity.perMinute;
+          $('#estimate-text').textContent =
+            remaining === 0
+              ? 'Target reached'
+              : rate > 0
+              ? `~${Math.ceil(remaining / rate).toLocaleString()} min to target at current pace`
+              : `${fmt(remaining)} to go`;
+
+          renderBars(
+            'bars-continent',
+            next.continents.map((c) => ({ key: c.name, label: c.name, count: c.count })),
+            { colors: CONTINENT_COLORS }
+          );
+          renderBars(
+            'bars-gender',
+            next.genders.map((g) => ({ key: g.key, label: genderLabel(g.key), count: g.count })),
+            { colors: { female: 'rose', male: '', 'non-binary': 'violet', undisclosed: 'amber' } }
+          );
+          renderBars(
+            'bars-age',
+            next.ages.map((a) => ({ key: a.key, label: a.key, count: a.count })),
+            {}
+          );
+          renderBars(
+            'bars-channel',
+            next.channels.map((c) => ({ key: c.key, label: channelLabel(c.key), count: c.count })),
+            {}
+          );
+
+          renderTable('table-countries', filterCountries(next.countries), countryRow);
+          renderTable('table-cities', next.cities, cityRow);
+          renderTable('table-regions', next.regions, (r) =>
+            el('tr', {}, [
+              el('td', { text: r.name }),
+              el('td', { class: 'dim', text: r.countryName }),
+              el('td', { class: 'num', text: fmt(r.count) }),
+            ])
+          );
+
+          $('#city-count-label').textContent = `${fmt(next.cityCount)} total`;
+          $('#region-count-label').textContent = `${fmt(next.regionCount)} total`;
+          $('#map-updated').textContent = `updated ${timeAgo(next.updatedAt)}`;
+          renderSpark(next.minuteSeries);
+
+          if (map) map.setPoints(next.countries.filter((c) => c.lat && c.lng));
+        }
+
+        let countryFilter = '';
+        function filterCountries(list) {
+          if (!countryFilter) return list;
+          const q = countryFilter.toLowerCase();
+          return list.filter(
+            (c) => c.name.toLowerCase().includes(q) || c.continent.toLowerCase().includes(q)
+          );
+        }
+
+        function addTick(j) {
+          const host = $('#ticker');
+          if (host.querySelector('.dim') && !host.querySelector('.tick')) host.innerHTML = '';
+          const node = el('div', { class: 'tick' }, [
+            el('span', { class: 'avatar', text: (j.country || '??').toUpperCase().slice(0, 2) }),
+            el('span', {}, [
+              el('span', { class: 'who', text: j.name }),
+              el('span', { class: 'dim', text: ' · ' }),
+              el('span', { class: 'where', text: `${j.city || 'Unknown'}, ${j.countryName || j.country}` }),
+              j.injected ? el('span', { class: 'badge injected', style: 'margin-left:.4rem', text: 'test' }) : null,
+            ]),
+            el('span', { class: 'when', text: timeAgo(j.at) }),
+          ]);
+          host.prepend(node);
+          while (host.children.length > 40) host.lastChild.remove();
+        }
+
+        // ---------------------------------------------------------------- boot
+        async function boot() {
+          if (!protestId) return;
+          try {
+            const { protest } = await api.protest(protestId);
+            current = protest;
+            renderHeader();
+            if (protest.kpi) renderKpi(protest.kpi);
+          } catch (err) {
+            alertBox('error', `Could not load this protest: ${escapeHtml(err.message)}`);
+            return;
+          }
+
+          map = createMap($('#world-map'), { color: '#2ee6a8' });
+
+          const { joiners } = await api.joiners(protestId, 25);
+          joiners.reverse().forEach(addTick);
+
+          stream = live(protestId, {
+            kpi(data) {
+              renderKpi(data.kpi);
+            },
+            join(j) {
+              addTick(j);
+            },
+            ended() {
+              alertBox('warn', 'This protest has finished. The final totals are shown below.');
+              $('#ticker-badge').className = 'badge ended';
+              $('#ticker-badge').textContent = 'closed';
+            },
+            disconnected() {
+              $('#ticker-badge').className = 'badge upcoming';
+              $('#ticker-badge').textContent = 'reconnecting';
+            },
+            connected() {
+              $('#ticker-badge').className = 'badge live';
+              $('#ticker-badge').textContent = 'live';
+            },
+          });
+
+          $('#country-filter').addEventListener(
+            'input',
+            window.WDP.debounce((e) => {
+              countryFilter = e.target.value;
+              if (kpi) renderTable('table-countries', filterCountries(kpi.countries), countryRow);
+            }, 150)
+          );
+
+          $('#btn-share').addEventListener('click', async () => {
+            const url = location.href;
+            try {
+              await navigator.clipboard.writeText(url);
+              toast('Share link copied. Anyone can join from it.', 'success');
+            } catch {
+              window.prompt('Copy this link:', url);
+            }
+          });
+
+          $('#report-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const body = {
+              category: form.elements.category.value,
+              detail: form.elements.detail.value,
+              joinerName: form.elements.joinerName.value,
+            };
+            try {
+              await api.report(protestId, body);
+              $('#report-result').innerHTML =
+                '<div class="notice success">Report received and queued for review against the protocol.</div>';
+              form.reset();
+            } catch (err) {
+              $('#report-result').innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+            }
+          });
+        }
+
+        boot();
+
+        window.addEventListener('beforeunload', () => {
+          if (stream) stream.close();
+        });
+      })();
+    </script>
+  </body>
+</html>
