@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Join with no internet — World Digital Protest</title>
+    <meta
+      name="description"
+      content="Join a worldwide protest without internet: over Bluetooth, a nearby Wi-Fi hotspot, a scanned or printed code, or fully offline with a signed envelope that syncs later."
+    />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main class="wrap">
+      <section class="section" style="margin-top: 1.5rem">
+        <span class="badge offline">Works with no internet</span>
+        <h1 style="margin-top: 0.6rem">Join from anywhere, on any connection</h1>
+        <p class="muted" style="max-width: 70ch">
+          Internet access is not evenly distributed, so the protest cannot depend on it. There are
+          four ways to join without a data plan or a working network. All four accept the same
+          protocol and land on the same worldwide count.
+        </p>
+      </section>
+
+      <section class="section">
+        <div class="grid grid-2">
+          <div class="card">
+            <h3><span class="badge offline">1</span> Bluetooth beacon</h3>
+            <p class="card-sub">
+              A phone, laptop or small beacon near you broadcasts a protest packet. Your device picks
+              it up and you join from the app or page it opens.
+            </p>
+            <ul class="muted" style="font-size: 0.88rem; padding-left: 1.1rem">
+              <li>No internet needed to receive the beacon.</li>
+              <li>The packet carries the protest id, protocol hash and a 15-minute pairing code.</li>
+              <li>Absorbed joins are accepted at the moment they reach a network.</li>
+            </ul>
+            <div class="notice info mt-2">
+              A beacon never contains anyone's personal data — only the protest reference and a
+              rotating code.
+            </div>
+          </div>
+
+          <div class="card">
+            <h3><span class="badge offline">2</span> Nearby Wi-Fi hotspot</h3>
+            <p class="card-sub">
+              One person with connectivity shares a hotspot. Anyone in range joins, and no mobile data
+              is used by participants.
+            </p>
+            <ol class="muted" style="font-size: 0.88rem; padding-left: 1.2rem">
+              <li>Open the protest page on the device with a connection.</li>
+              <li>Show the pairing code or QR from the protest dashboard.</li>
+              <li>Others join through the hotspot and land on the same count.</li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <h3><span class="badge offline">3</span> Scanned or printed code</h3>
+            <p class="card-sub">
+              Any poster, sticker, wall or screen can carry a protest code. Scan it and join — no
+              account, no app install.
+            </p>
+            <div class="row">
+              <input type="text" id="code-input" placeholder="Enter a 6-character pairing code" maxlength="8" />
+              <button class="btn btn-secondary" id="btn-code">Check code</button>
+            </div>
+            <div id="code-result" class="mt-2"></div>
+          </div>
+
+          <div class="card">
+            <h3><span class="badge offline">4</span> Fully offline, synced later</h3>
+            <p class="card-sub">
+              No network at all? Your join is signed on the device, stored, and submitted the next
+              time it reaches any connection — powered by you, an internet café, a hotspot, or a
+              relayed device.
+            </p>
+            <ol class="muted" style="font-size: 0.88rem; padding-left: 1.2rem">
+              <li>Your device stores a signed join envelope.</li>
+              <li>It can be relayed by anyone who later gets a connection.</li>
+              <li>The server verifies the signature before counting it.</li>
+            </ol>
+            <div class="row mt-2">
+              <button class="btn btn-primary btn-sm" id="btn-sync">Sync my offline joins</button>
+              <span class="dim" id="sync-status"></span>
+            </div>
+            <div id="queue-list" class="mt-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>Become a relay point</h3>
+          <p class="card-sub">
+            If you have a connection and people around you do not, you can carry their joins. Each
+            envelope is signed with the pairing code it was created under, so a relay cannot forge
+            or inflate a join — it can only deliver it.
+          </p>
+          <div class="grid grid-2 mt-2">
+            <div class="notice info">
+              <strong>What a relay can do</strong><br />
+              Deliver a genuine offline join created under a valid pairing code.
+            </div>
+            <div class="notice warn">
+              <strong>What a relay cannot do</strong><br />
+              Create joins, reuse an expired code, change the protocol, or add a country that was
+              not in the envelope.
+            </div>
+          </div>
+          <details class="mt-3">
+            <summary style="cursor: pointer; font-weight: 650">Technical detail: envelope format</summary>
+            <pre
+              class="mono dim"
+              style="overflow: auto; font-size: 0.78rem; background: var(--bg-soft); padding: 0.9rem; border-radius: 10px; border: 1px solid var(--line)"
+            >
+wdp1.&lt;base64url(beacon json)&gt;                 beacon carried by BLE / QR / print
+body.sig                                        signed join envelope
+body = { t: "wdp-join", v: "1.0", h: &lt;protocol hash&gt;,
+         p: &lt;protest id&gt;, c: &lt;pairing code&gt;,
+         iat, exp, nonce }
+sig  = HMAC-SHA256(body, sha256("wdp:" + pairingCode + ":" + protocolHash))
+            </pre>
+          </details>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>Issue a fresh code for this protest</h3>
+          <p class="card-sub">
+            Codes rotate every 15 minutes. Print or display the current one so people nearby can
+            join without any network of their own.
+          </p>
+          <div class="row">
+            <select id="protest-select" style="max-width: 340px"></select>
+            <button class="btn btn-secondary" id="btn-refresh">Generate code</button>
+          </div>
+          <div id="beacon-result" class="mt-3"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="/assets/js/core.js"></script>
+    <script src="/assets/js/shell.js"></script>
+    <script>
+      (function () {
+        const { $, el, api, escapeHtml, toast, store, deviceSeed } = window.WDP;
+        const QUEUE = 'wdp.offline.queue';
+
+        function renderQueue() {
+          const queue = store.get(QUEUE, []);
+          const host = $('#queue-list');
+          host.innerHTML = '';
+          if (!queue.length) {
+            host.innerHTML = '<div class="dim" style="font-size:.85rem">No offline joins waiting on this device.</div>';
+            return;
+          }
+          host.innerHTML = `<div class="notice warn"><strong>${queue.length}</strong> join(s) waiting to sync from this device.</div>`;
+        }
+
+        async function loadProtests() {
+          const { protests } = await api.protests(false);
+          const select = $('#protest-select');
+          select.innerHTML = '';
+          for (const p of protests.filter((x) => x.phase !== 'ended')) {
+            select.append(el('option', { value: p.id, text: p.headline }));
+          }
+        }
+
+        $('#btn-code').addEventListener('click', async () => {
+          const code = $('#code-input').value.trim().toUpperCase();
+          const host = $('#code-result');
+          if (!code) return;
+          try {
+            const data = await api.inspect(code.startsWith('wdp1:') ? code : code);
+            const p = data.protest;
+            if (!p) {
+              host.innerHTML = '<div class="notice error">This code is not attached to a protest.</div>';
+              return;
+            }
+            host.innerHTML = `<div class="notice success">
+              <strong>${escapeHtml(p.headline)}</strong><br />
+              <span class="dim">${data.expired ? 'This code has expired — ask for a current one.' : 'Code is current.'}</span><br />
+              <a class="btn btn-primary btn-sm mt-1" href="join.html?p=${encodeURIComponent(p.id)}&c=${encodeURIComponent(
+              data.beacon.c || code
+            )}">Join this protest</a>
+            </div>`;
+          } catch (err) {
+            // A bare 6-character code has no protest attached until the server
+            // resolves it, so give the useful instruction instead of an error.
+            host.innerHTML = `<div class="notice warn">
+              A 6-character code needs to be opened through a link or QR from the protest.
+              <a href="join.html?c=${encodeURIComponent(code)}">Try joining with this code</a>.
+            </div>`;
+          }
+        });
+
+        $('#btn-sync').addEventListener('click', async () => {
+          const queue = store.get(QUEUE, []);
+          const status = $('#sync-status');
+          if (!queue.length) {
+            status.textContent = 'Nothing queued.';
+            return;
+          }
+          status.innerHTML = '<span class="spinner"></span> Syncing…';
+          const remaining = [];
+          let accepted = 0;
+          for (const item of queue) {
+            try {
+              await api.join(item.protestId, item.body);
+              accepted += 1;
+            } catch (err) {
+              remaining.push(item);
+            }
+          }
+          store.set(QUEUE, remaining);
+          status.textContent = `${accepted} accepted, ${remaining.length} still queued.`;
+          renderQueue();
+        });
+
+        $('#btn-refresh').addEventListener('click', async () => {
+          const id = $('#protest-select').value;
+          if (!id) return;
+          try {
+            const data = await api.beacon(id);
+            $('#beacon-result').innerHTML = `
+              <div class="row" style="align-items:flex-start; gap:1.25rem">
+                <div class="qr-box"><img id="bc-qr" alt="QR code to join" /></div>
+                <div>
+                  <div class="field-label">Pairing code</div>
+                  <div class="mono" style="font-size:1.6rem;letter-spacing:.18em">${escapeHtml(
+                    data.beacon.c
+                  )}</div>
+                  <div class="help">Expires ${new Date(data.expiresAt).toLocaleTimeString()}</div>
+                  <div class="field-label mt-2">Join link</div>
+                  <div class="mono" style="font-size:.78rem;word-break:break-all">${escapeHtml(
+                    data.joinUrl
+                  )}</div>
+                  <div class="field-label mt-2">Beacon payload (BLE / print)</div>
+                  <div class="mono dim" style="font-size:.72rem;word-break:break-all;max-height:120px;overflow:auto">${escapeHtml(
+                    data.payload
+                  )}</div>
+                </div>
+              </div>`;
+            $('#bc-qr').src = data.qrJoin;
+          } catch (err) {
+            toast(err.message, 'error');
+          }
+        });
+
+        loadProtests().catch((err) => toast(err.message, 'error'));
+        renderQueue();
+        window.addEventListener('storage', renderQueue);
+      })();
+    </script>
+  </body>
+</html>

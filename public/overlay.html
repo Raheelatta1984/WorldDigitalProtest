@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KPI overlay — World Digital Protest</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <style>
+      /* Transparent, broadcast-safe KPI overlay: designed to be captured by OBS or
+         added as a browser source over a YouTube live stream. */
+      :root {
+        --accent: #2ee6a8;
+        --accent-2: #35a7ff;
+        --text: #ffffff;
+        --muted: rgba(255, 255, 255, 0.62);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+      }
+      body.solid {
+        background: #070b14;
+      }
+      #overlay {
+        width: 100%;
+        min-height: 100vh;
+        padding: 2.2vmin;
+        display: grid;
+        gap: 1.4vmin;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.55fr);
+        align-content: start;
+      }
+      .panel {
+        background: rgba(7, 11, 20, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 1.2vmin;
+        padding: 1.6vmin 2vmin;
+        backdrop-filter: blur(10px);
+      }
+      .headline {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2vmin;
+      }
+      .headline h1 {
+        margin: 0;
+        font-size: clamp(1rem, 2.4vw, 2rem);
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+      }
+      .live {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6vmin;
+        background: var(--accent);
+        color: #04121a;
+        font-weight: 800;
+        font-size: clamp(0.6rem, 1vw, 0.85rem);
+        padding: 0.5vmin 1.2vmin;
+        border-radius: 99px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+      }
+      .live::before {
+        content: '';
+        width: 0.9vmin;
+        height: 0.9vmin;
+        border-radius: 50%;
+        background: #04121a;
+        animation: pulse 1.4s infinite;
+      }
+      .live.ended {
+        background: rgba(255, 255, 255, 0.25);
+        color: #fff;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+      .big {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1.4vmin;
+      }
+      .metric .k {
+        font-size: clamp(0.55rem, 0.95vw, 0.8rem);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .metric .v {
+        font-size: clamp(1.6rem, 4.4vw, 3.6rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.05;
+      }
+      .metric.primary .v {
+        color: var(--accent);
+      }
+      .metric .sub {
+        font-size: clamp(0.55rem, 0.9vw, 0.78rem);
+        color: var(--muted);
+      }
+      .bars {
+        display: grid;
+        gap: 0.7vmin;
+      }
+      .bar {
+        display: grid;
+        grid-template-columns: minmax(60px, 34%) 1fr auto;
+        gap: 1vmin;
+        align-items: center;
+        font-size: clamp(0.55rem, 1vw, 0.85rem);
+      }
+      .bar .name {
+        color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .bar .track {
+        height: 1vmin;
+        min-height: 6px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .bar .fill {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, var(--accent-2), var(--accent));
+        transition: width 0.6s ease;
+      }
+      .bar .val {
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+      }
+      h2 {
+        margin: 0 0 1vmin;
+        font-size: clamp(0.6rem, 1.05vw, 0.9rem);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .progress {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 1.4vmin;
+        font-size: clamp(0.6rem, 0.95vw, 0.85rem);
+        color: var(--muted);
+      }
+      .progress .track {
+        flex: 1;
+        height: 1.2vmin;
+        min-height: 7px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .progress .fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent-2), var(--accent));
+        border-radius: 99px;
+        transition: width 0.8s ease;
+      }
+      .ticker {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 1vmin;
+        overflow: hidden;
+        font-size: clamp(0.55rem, 0.95vw, 0.8rem);
+        color: var(--muted);
+      }
+      .ticker .item {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 99px;
+        padding: 0.5vmin 1.2vmin;
+        white-space: nowrap;
+        animation: fade 0.4s ease;
+      }
+      @keyframes fade {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .links {
+        position: fixed;
+        right: 2vmin;
+        bottom: 2vmin;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+        display: flex;
+        gap: 10px;
+      }
+      .links a {
+        color: inherit;
+      }
+      body.share .links {
+        display: none;
+      }
+      @media (max-width: 700px) {
+        #overlay {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="overlay">
+      <div class="headline panel">
+        <h1 id="headline">World Digital Protest</h1>
+        <span class="live" id="phase">live</span>
+      </div>
+
+      <div class="big panel">
+        <div class="metric primary">
+          <div class="k">Participants worldwide</div>
+          <div class="v" id="total">—</div>
+          <div class="sub" id="total-sub">&nbsp;</div>
+        </div>
+        <div class="metric">
+          <div class="k">Countries</div>
+          <div class="v" id="countries">—</div>
+          <div class="sub" id="countries-sub">&nbsp;</div>
+        </div>
+        <div class="metric">
+          <div class="k">Cities &amp; areas</div>
+          <div class="v" id="cities">—</div>
+          <div class="sub" id="cities-sub">&nbsp;</div>
+        </div>
+        <div class="metric">
+          <div class="k">Joining per minute</div>
+          <div class="v" id="velocity">—</div>
+          <div class="sub" id="velocity-sub">&nbsp;</div>
+        </div>
+      </div>
+
+      <div class="progress panel" style="display: flex">
+        <span id="progress-label">Target</span>
+        <span class="track"><span class="fill" id="progress-fill" style="width: 0%"></span></span>
+        <span id="progress-value">—</span>
+      </div>
+
+      <div class="panel">
+        <h2>Top countries</h2>
+        <div class="bars" id="bars-countries"></div>
+      </div>
+
+      <div class="panel">
+        <h2>By gender</h2>
+        <div class="bars" id="bars-gender"></div>
+        <h2 style="margin-top: 1.6vmin">By age</h2>
+        <div class="bars" id="bars-age"></div>
+      </div>
+
+      <div class="ticker panel" id="ticker"></div>
+    </div>
+
+    <div class="links">
+      <a href="#" id="toggle-bg">toggle background</a>
+      <a href="#" id="toggle-links">hide links</a>
+      <span id="conn">connecting…</span>
+    </div>
+
+    <script src="/assets/js/core.js"></script>
+    <script>
+      (function () {
+        const { $, api, live, fmt, compact, genderLabel } = window.WDP;
+        const params = new URLSearchParams(location.search);
+        const protestId = params.get('id') || params.get('p');
+        let handle = null;
+        let target = null;
+
+        if (location.hash.includes('solid')) document.body.classList.add('solid');
+
+        function bars(hostId, items, colour) {
+          const host = document.getElementById(hostId);
+          if (!host) return;
+          const max = Math.max(1, ...items.map((i) => i.count));
+          host.innerHTML = '';
+          for (const item of items) {
+            const row = document.createElement('div');
+            row.className = 'bar';
+            row.innerHTML = `<span class="name">${item.label}</span>
+              <span class="track"><span class="fill" style="width:${Math.max(
+                2,
+                (item.count / max) * 100
+              )}%;${colour ? `background:${colour}` : ''}"></span></span>
+              <span class="val">${compact(item.count)}</span>`;
+            host.append(row);
+          }
+        }
+
+        function render(kpi) {
+          if (!kpi) return;
+          document.getElementById('total').textContent = fmt(kpi.total);
+          document.getElementById('total-sub').textContent = `${fmt(kpi.real)} verified · ${fmt(
+            kpi.injected
+          )} test`;
+          document.getElementById('countries').textContent = fmt(kpi.countryCount);
+          document.getElementById('cities').textContent = fmt(kpi.cityCount);
+          document.getElementById('velocity').textContent = fmt(kpi.velocity.perMinute);
+          document.getElementById('velocity-sub').textContent = `${fmt(
+            kpi.velocity.last5
+          )} in the last 5 min`;
+
+          document.getElementById('progress-fill').style.width = `${Math.min(100, kpi.progress)}%`;
+          document.getElementById('progress-value').textContent = `${kpi.progress}% of ${compact(
+            kpi.target
+          )}`;
+
+          bars(
+            'bars-countries',
+            kpi.countries.slice(0, 6).map((c) => ({ label: c.name, count: c.count }))
+          );
+          bars(
+            'bars-gender',
+            kpi.genders.map((g) => ({ label: genderLabel(g.key), count: g.count })),
+            'linear-gradient(90deg,#f43f5e,#fb7185)'
+          );
+          bars(
+            'bars-age',
+            kpi.ages.map((a) => ({ label: a.key, count: a.count })),
+            'linear-gradient(90deg,#f59e0b,#ffd166)'
+          );
+        }
+
+        function addTick(j) {
+          const host = document.getElementById('ticker');
+          const node = document.createElement('span');
+          node.className = 'item';
+          node.textContent = `${j.name} · ${j.city || 'Unknown'}, ${j.countryName || j.country}`;
+          host.prepend(node);
+          while (host.children.length > 4) host.lastChild.remove();
+        }
+
+        async function boot() {
+          if (!protestId) {
+            // No protest given: follow the most recently opened live one.
+            try {
+              const { protests } = await api.protests(false);
+              const liveOne = protests.find((p) => p.phase === 'live') || protests[0];
+              if (!liveOne) {
+                document.getElementById('headline').textContent = 'No protest selected';
+                return;
+              }
+              location.replace(`overlay.html?id=${encodeURIComponent(liveOne.id)}${location.hash}`);
+              return;
+            } catch {
+              return;
+            }
+          }
+
+          const { protest } = await api.protest(protestId);
+          target = protest;
+          document.getElementById('headline').textContent = protest.headline;
+          if (protest.kpi) render(protest.kpi);
+
+          const phase = document.getElementById('phase');
+          if (protest.phase === 'ended') {
+            phase.className = 'live ended';
+            phase.textContent = 'finished';
+          } else if (protest.phase === 'upcoming') {
+            phase.className = 'live ended';
+            phase.textContent = 'opens soon';
+          }
+
+          handle = live(protestId, {
+            kpi: (d) => render(d.kpi),
+            join: (j) => addTick(j),
+            connected: () => (document.getElementById('conn').textContent = 'live'),
+            disconnected: () => (document.getElementById('conn').textContent = 'reconnecting…'),
+            ended: () => {
+              phase.className = 'live ended';
+              phase.textContent = 'finished';
+            },
+          });
+        }
+
+        document.getElementById('toggle-bg').addEventListener('click', (e) => {
+          e.preventDefault();
+          document.body.classList.toggle('solid');
+        });
+        document.getElementById('toggle-links').addEventListener('click', (e) => {
+          e.preventDefault();
+          document.body.classList.toggle('share');
+        });
+
+        boot();
+      })();
+    </script>
+  </body>
+</html>

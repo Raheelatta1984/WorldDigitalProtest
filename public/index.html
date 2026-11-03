@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>World Digital Protest — one protocol, every country, no travel required</title>
+    <meta
+      name="description"
+      content="Join a worldwide protest at the same moment from anywhere: internet, Bluetooth, hotspot or completely offline. One peaceful protocol for everyone, no personal data collected, live global KPIs and a live stream for every protest."
+    />
+    <meta name="theme-color" content="#070b14" />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main>
+      <section class="wrap hero">
+        <div class="row" style="gap: 0.5rem; margin-bottom: 1rem">
+          <span class="badge live">Live worldwide</span>
+          <span class="badge peace">Peaceful by protocol</span>
+          <span class="badge offline">Works with no internet</span>
+        </div>
+        <h1>The same protest, in every country, at the same moment.</h1>
+        <p class="lede">
+          Join from your home, your suburb, or a bus with no signal. No travel, no personal
+          details, no leader to follow — one peaceful protocol that applies identically in every
+          country, city and suburb on earth. Watch the count rise, country by country, live.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="protests.html">Join a live protest</a>
+          <a class="btn btn-secondary" href="protocol.html">Read the protocol</a>
+          <a class="btn btn-ghost" href="offline.html">I have no internet</a>
+        </div>
+
+        <div class="hero-strip" id="hero-strip">
+          <div>
+            <div class="k">Participants today</div>
+            <div class="v" id="hero-total">—</div>
+          </div>
+          <div>
+            <div class="k">Countries represented</div>
+            <div class="v" id="hero-countries">—</div>
+          </div>
+          <div>
+            <div class="k">Cities &amp; areas</div>
+            <div class="v" id="hero-cities">—</div>
+          </div>
+          <div>
+            <div class="k">Live protests</div>
+            <div class="v" id="hero-protests">—</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap section">
+        <div class="section-head">
+          <div>
+            <h2>Protests running now</h2>
+            <p>
+              Every protest shows only what matters: the headline, the reason, and who is joining
+              by country, city and area, by gender and by age. Nothing else is collected.
+            </p>
+          </div>
+          <a class="btn btn-secondary btn-sm" href="protests.html">See all protests</a>
+        </div>
+        <div class="grid grid-2" id="protest-list">
+          <div class="card"><span class="spinner"></span> Loading live protests…</div>
+        </div>
+      </section>
+
+      <section class="wrap section">
+        <div class="section-head">
+          <div>
+            <h2>How a digital protest works</h2>
+            <p>
+              Four questions decide whether a worldwide protest is real or theatre. Here is how
+              each one is answered.
+            </p>
+          </div>
+        </div>
+        <div class="grid grid-4">
+          <div class="card flat">
+            <h3><span class="badge">1</span> Same moment</h3>
+            <p class="muted" style="margin: 0">
+              A protest opens with a single start and end time. Everyone joins that one window, in
+              every timezone, so presence is simultaneous rather than spread out.
+            </p>
+          </div>
+          <div class="card flat">
+            <h3><span class="badge">2</span> No travel</h3>
+            <p class="muted" style="margin: 0">
+              Taking part from home counts fully. Nobody is asked to gather, march or go anywhere.
+            </p>
+          </div>
+          <div class="card flat">
+            <h3><span class="badge">3</span> Any connection</h3>
+            <p class="muted" style="margin: 0">
+              Join over the internet, a nearby Wi-Fi hotspot, a Bluetooth beacon, a scanned QR code,
+              or fully offline — the join is queued and counted when it syncs.
+            </p>
+          </div>
+          <div class="card flat">
+            <h3><span class="badge">4</span> One protocol</h3>
+            <p class="muted" style="margin: 0">
+              Peaceful conduct is an entry requirement, not a request. The same rules bind every
+              participant, in every country, with no local exceptions.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap section">
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>What we never collect</h3>
+            <p class="card-sub">This is the whole data model, not a summary of it.</p>
+            <div class="bars">
+              <div class="bar-row">
+                <span class="bar-name">Your real name</span>
+                <span class="bar-track"><span class="bar-fill rose" style="width: 100%"></span></span>
+                <span class="bar-value">never asked</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-name">Email or phone</span>
+                <span class="bar-track"><span class="bar-fill rose" style="width: 100%"></span></span>
+                <span class="bar-value">never asked</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-name">Street address</span>
+                <span class="bar-track"><span class="bar-fill rose" style="width: 100%"></span></span>
+                <span class="bar-value">never asked</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-name">Photos or ID</span>
+                <span class="bar-track"><span class="bar-fill rose" style="width: 100%"></span></span>
+                <span class="bar-value">never asked</span>
+              </div>
+            </div>
+            <hr style="border: none; border-top: 1px solid var(--line-soft); margin: 1.1rem 0" />
+            <h3>What you do give</h3>
+            <div class="bars">
+              <div class="bar-row">
+                <span class="bar-name">Age range</span>
+                <span class="bar-track"><span class="bar-fill" style="width: 100%"></span></span>
+                <span class="bar-value">one choice</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-name">Gender</span>
+                <span class="bar-track"><span class="bar-fill" style="width: 100%"></span></span>
+                <span class="bar-value">one choice</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-name">Country / city / area</span>
+                <span class="bar-track"><span class="bar-fill" style="width: 100%"></span></span>
+                <span class="bar-value">for the count</span>
+              </div>
+            </div>
+            <p class="dim mt-2" style="margin-bottom: 0">
+              You are given a generated protester name when you join, such as
+              <span class="mono">Quiet Willow #4192</span>. It is not linked to anything about you.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3>Join however you can connect</h3>
+            <p class="card-sub">The same protocol over every channel — the count is identical.</p>
+            <div class="stack-sm">
+              <div class="row-between notice info">
+                <span><strong>Internet</strong><br /><small>Direct join from any browser</small></span>
+                <span class="badge offline">Web</span>
+              </div>
+              <div class="row-between notice info">
+                <span><strong>Nearby Wi-Fi hotspot</strong><br /><small>Join the local hotspot, no data plan needed</small></span>
+                <span class="badge offline">Hotspot</span>
+              </div>
+              <div class="row-between notice info">
+                <span><strong>Bluetooth beacon</strong><br /><small>Phone picks up a protest beacon and joins</small></span>
+                <span class="badge offline">Bluetooth</span>
+              </div>
+              <div class="row-between notice info">
+                <span><strong>Scanned or printed code</strong><br /><small>QR on a poster, wall or screen</small></span>
+                <span class="badge offline">QR</span>
+              </div>
+              <div class="row-between notice info">
+                <span><strong>Completely offline</strong><br /><small>Join is signed, queued and synced later</small></span>
+                <span class="badge offline">Offline</span>
+              </div>
+            </div>
+            <a class="btn btn-secondary btn-block mt-2" href="offline.html">How offline joining works</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap section">
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Live stream for every protest</h3>
+            <p class="card-sub">
+              Each protest has its own YouTube live channel slot, with the KPI overlay on screen for
+              the whole duration — until the protest finishes.
+            </p>
+            <div class="notice info">
+              Point a protest at its YouTube live video ID and the platform shows the stream inside
+              the protest page and in the standalone overlay used by broadcast software.
+            </div>
+            <div class="row mt-2">
+              <a class="btn btn-secondary btn-sm" href="protests.html">Open a livestream</a>
+              <a class="btn btn-ghost btn-sm" href="overlay.html">KPI overlay for OBS</a>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Physical presence is separate, verified and optional</h3>
+            <p class="card-sub">
+              Digital presence is never a stepping stone to being asked to attend something.
+            </p>
+            <ol class="muted" style="padding-left: 1.2rem; font-size: 0.9rem">
+              <li>You request physical presence — no obligation, no pressure.</li>
+              <li>Verification runs before anything is scheduled.</li>
+              <li>A short list is drawn from different areas, never one dense crowd.</li>
+              <li>The same protocol applies to every scheduled group.</li>
+            </ol>
+            <a class="btn btn-ghost btn-sm mt-2" href="physical.html">How scheduling works</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="/assets/js/core.js"></script>
+    <script src="/assets/js/shell.js"></script>
+    <script>
+      (function () {
+        const { api, el, fmt, compact, escapeHtml, toast, relativeToNow } = window.WDP;
+
+        function protestCard(p) {
+          const phase = p.phase;
+          const badge =
+            phase === 'live'
+              ? '<span class="badge live">Live now</span>'
+              : phase === 'upcoming'
+              ? `<span class="badge upcoming">Opens ${escapeHtml(relativeToNow(p.startsAt))}</span>`
+              : `<span class="badge ended">Finished</span>`;
+          const totals = p.totals || p.kpi || {};
+          return el('article', { class: 'card protest-card' }, [
+            el('div', { class: 'meta' }, [
+              el('span', { html: badge }),
+              el('span', { class: 'badge peace', text: 'Protocol 1.0' }),
+            ]),
+            el('h3', {}, el('a', { href: `protest.html?id=${encodeURIComponent(p.id)}`, text: p.headline })),
+            el('p', { class: 'reason', text: p.reason }),
+            el('div', {
+              class: 'progress',
+              html: `<span style="width:${Math.min(100, totals.progress || 0)}%"></span>`,
+            }),
+            el('div', { class: 'card-stats' }, [
+              el('span', { html: `<b>${fmt(totals.real)}</b> real · ${fmt(totals.injected)} test` }),
+              el('span', { html: `<b>${fmt(totals.total)}</b> joined` }),
+              el('span', { html: `<b>${fmt(totals.countries)}</b> countries` }),
+              el('span', { html: `<b>${fmt(totals.cities)}</b> cities / areas` }),
+              el('span', { html: `target <b>${compact(p.targetJoiners)}</b>` }),
+            ]),
+            el('div', { class: 'row mt-1' }, [
+              el('a', {
+                class: 'btn btn-primary btn-sm',
+                href: `join.html?p=${encodeURIComponent(p.id)}`,
+                text: 'Join now',
+              }),
+              el('a', {
+                class: 'btn btn-secondary btn-sm',
+                href: `protest.html?id=${encodeURIComponent(p.id)}`,
+                text: 'Live dashboard',
+              }),
+            ]),
+          ]);
+        }
+
+        async function loadHero() {
+          try {
+            const { status } = await api.status();
+            document.getElementById('hero-total').textContent = fmt(status.totals.total);
+            document.getElementById('hero-countries').textContent = fmt(status.totals.countries);
+            document.getElementById('hero-cities').textContent =
+              status.geo.cities.toLocaleString();
+            document.getElementById('hero-protests').textContent = `${fmt(status.totals.live)} of ${fmt(
+              status.protests
+            )}`;
+          } catch (err) {
+            toast(`Could not load platform status: ${err.message}`, 'error');
+          }
+        }
+
+        async function loadProtests() {
+          const host = document.getElementById('protest-list');
+          try {
+            const { protests } = await api.protests(false);
+            host.innerHTML = '';
+            if (!protests.length) {
+              host.append(
+                el('div', { class: 'card' }, [
+                  el('h3', { text: 'No protests are open right now' }),
+                  el('p', {
+                    class: 'muted',
+                    text: 'Start one and it will appear here immediately for everyone.',
+                  }),
+                  el('a', { class: 'btn btn-primary btn-sm', href: 'create.html', text: 'Start a protest' }),
+                ])
+              );
+              return;
+            }
+            const live = protests.filter((p) => p.phase === 'live');
+            const rest = protests.filter((p) => p.phase !== 'live');
+            for (const p of [...live, ...rest].slice(0, 6)) host.append(protestCard(p));
+          } catch (err) {
+            host.innerHTML = '';
+            host.append(el('div', { class: 'notice error', text: `Could not load protests: ${err.message}` }));
+          }
+        }
+
+        loadHero();
+        loadProtests();
+        // Keep the homepage numbers fresh without a stream per card.
+        setInterval(loadProtests, 20000);
+      })();
+    </script>
+  </body>
+</html>

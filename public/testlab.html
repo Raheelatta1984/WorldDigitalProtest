@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Test lab — inject global participants</title>
+    <meta
+      name="description"
+      content="Inject test participants across every country to validate global KPI panels, the live map and demographic breakdowns before a real protest opens."
+    />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main class="wrap">
+      <section class="section" style="margin-top: 1.5rem">
+        <span class="badge injected">Test tooling</span>
+        <h1 style="margin-top: 0.6rem">Test lab</h1>
+        <p class="muted" style="max-width: 76ch">
+          Before a protest opens to the world, we need to know that the worldwide numbers render
+          correctly: every country on the map, city and area lists filled, gender and age panels
+          populated, and the live counter holding up under a spike. Injected participants are stored
+          with a test flag, counted separately in every KPI, and can be cleared instantly.
+        </p>
+        <div class="notice warn mt-2">
+          <strong>Injected data is always labelled.</strong> Every KPI response splits
+          <span class="mono">real</span> from <span class="mono">injected</span>. Nothing is ever
+          silently mixed into a verified figure.
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>1. Choose a protest</h3>
+            <label class="field">
+              <span class="field-label">Protest</span>
+              <select id="protest-select"></select>
+            </label>
+            <div id="selected-summary" class="notice info hidden"></div>
+          </div>
+
+          <div class="card">
+            <h3>2. Inject participants</h3>
+            <div class="grid grid-2" style="gap: 0.9rem">
+              <label class="field" style="margin: 0">
+                <span class="field-label">How many</span>
+                <input type="number" id="count" value="5000" min="1" max="200000" />
+              </label>
+              <label class="field" style="margin: 0">
+                <span class="field-label">Spread over (minutes)</span>
+                <input type="number" id="spread" value="60" min="0" max="10080" />
+              </label>
+            </div>
+            <button class="btn btn-primary btn-block mt-2" id="btn-inject">Inject worldwide (weighted by population)</button>
+            <div class="help">Weighted by country population, with a floor so small countries still appear.</div>
+
+            <hr style="border: none; border-top: 1px solid var(--line-soft); margin: 1.1rem 0" />
+
+            <div class="grid grid-2" style="gap: 0.9rem">
+              <label class="field" style="margin: 0">
+                <span class="field-label">Or: per country</span>
+                <input type="number" id="per-country" value="20" min="1" max="2000" />
+              </label>
+              <label class="field" style="margin: 0">
+                <span class="field-label">Target countries</span>
+                <input type="text" id="country-filter" placeholder="all, or AU,US,GB,…" />
+              </label>
+            </div>
+            <button class="btn btn-secondary btn-block mt-1" id="btn-worldwide">
+              Inject the same number in every country
+            </button>
+            <div class="help">Guarantees full coverage: one row per country in every panel.</div>
+
+            <hr style="border: none; border-top: 1px solid var(--line-soft); margin: 1.1rem 0" />
+
+            <button class="btn btn-danger btn-block" id="btn-clear">Clear all injected participants</button>
+          </div>
+        </div>
+        <div id="inject-status" class="mt-2"></div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <div class="row-between">
+            <h3 style="margin: 0">Validation checks</h3>
+            <button class="btn btn-ghost btn-sm" id="btn-validate">Run checks</button>
+          </div>
+          <p class="card-sub">
+            Verifies that the KPI payloads are internally consistent and that global coverage exists.
+          </p>
+          <div id="checks" class="stack-sm"><span class="dim">Run the checks to validate the current data.</span></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Live KPI snapshot</h3>
+            <div class="grid grid-2 mt-2" id="kpi-snapshot">
+              <div class="stat accent">
+                <div class="stat-label">Total</div>
+                <div class="stat-value" id="t-total">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Countries</div>
+                <div class="stat-value" id="t-countries">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Cities</div>
+                <div class="stat-value" id="t-cities">—</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Injected</div>
+                <div class="stat-value" id="t-injected">—</div>
+              </div>
+            </div>
+            <div class="table-scroll mt-2">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Country</th>
+                    <th class="num">Total</th>
+                    <th class="num">Real</th>
+                    <th class="num">Injected</th>
+                  </tr>
+                </thead>
+                <tbody id="snapshot-rows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Platform state</h3>
+            <table class="mt-1">
+              <tbody id="platform-state">
+                <tr><td class="dim">Loading…</td></tr>
+              </tbody>
+            </table>
+            <div class="row mt-2">
+              <button class="btn btn-ghost btn-sm" id="btn-refresh">Refresh</button>
+              <a class="btn btn-ghost btn-sm" href="protest.html" id="open-dashboard">Open dashboard</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="/assets/js/core.js"></script>
+    <script src="/assets/js/shell.js"></script>
+    <script>
+      (function () {
+        const { $, el, api, fmt, escapeHtml, toast } = window.WDP;
+        let kpi = null;
+
+        function renderSummary(protest) {
+          const k = protest.kpi || {};
+          $('#selected-summary').classList.remove('hidden');
+          $('#selected-summary').innerHTML = `
+            <strong>${escapeHtml(protest.headline)}</strong><br />
+            <span class="dim">${fmt(k.total)} total · ${fmt(k.real)} real · ${fmt(
+            k.injected
+          )} injected · ${fmt(k.countryCount)} countries</span>`;
+          $('#open-dashboard').href = `protest.html?id=${encodeURIComponent(protest.id)}`;
+        }
+
+        async function loadProtests() {
+          const { protests } = await api.protests(true);
+          const select = $('#protest-select');
+          select.innerHTML = '';
+          for (const p of protests) {
+            select.append(
+              el('option', { value: p.id, text: `${p.headline} (${p.phase})` })
+            );
+          }
+          const initial = new URLSearchParams(location.search).get('p');
+          if (initial && protests.some((p) => p.id === initial)) select.value = initial;
+          if (select.value) await selectProtest(select.value);
+        }
+
+        async function selectProtest(id) {
+          const { protest } = await api.protest(id);
+          renderSummary(protest);
+          await loadKpi(id);
+        }
+
+        async function loadKpi(id) {
+          const target = id || $('#protest-select').value;
+          if (!target) return;
+          try {
+            const data = await api.kpi(target);
+            kpi = data.kpi;
+            $('#t-total').textContent = fmt(kpi.total);
+            $('#t-countries').textContent = fmt(kpi.countryCount);
+            $('#t-cities').textContent = fmt(kpi.cityCount);
+            $('#t-injected').textContent = fmt(kpi.injected);
+            const tbody = $('#snapshot-rows');
+            tbody.innerHTML = '';
+            kpi.countries.slice(0, 25).forEach((c) => {
+              tbody.append(
+                el('tr', {}, [
+                  el('td', { text: c.name }),
+                  el('td', { class: 'num', text: fmt(c.count) }),
+                  el('td', { class: 'num', text: fmt(c.real) }),
+                  el('td', { class: 'num dim', text: fmt(c.injected) }),
+                ])
+              );
+            });
+          } catch (err) {
+            toast(err.message, 'error');
+          }
+        }
+
+        async function loadPlatform() {
+          const { status } = await api.status();
+          const tbody = $('#platform-state');
+          tbody.innerHTML = '';
+          const rows = [
+            ['Protocol', `${status.version} · ${status.protocolHash.slice(0, 12)}`],
+            ['Protests', fmt(status.protests)],
+            ['Live viewers', fmt(status.liveViewers)],
+            ['Supported countries', fmt(status.geo.countries)],
+            ['Supported cities / areas', fmt(status.geo.cities)],
+            ['Regions', fmt(status.geo.regions)],
+            ['Injection enabled', status.injectionEnabled ? 'yes' : 'no'],
+            ['Server time', new Date(status.serverTime).toLocaleTimeString()],
+          ];
+          rows.forEach(([k, v]) =>
+            tbody.append(el('tr', {}, [el('td', { class: 'muted', text: k }), el('td', { text: v })]))
+          );
+        }
+
+        function statusLine(html, kind) {
+          $('#inject-status').innerHTML = `<div class="notice ${kind || 'info'}">${html}</div>`;
+        }
+
+        $('#btn-inject').addEventListener('click', async () => {
+          const id = $('#protest-select').value;
+          const count = Number($('#count').value);
+          const spread = Number($('#spread').value);
+          const btn = $('#btn-inject');
+          btn.disabled = true;
+          statusLine(`<span class="spinner"></span> Injecting ${fmt(count)} participants across the world…`);
+          try {
+            const data = await api.inject(id, { count, spreadMinutes: spread });
+            statusLine(
+              `Injected <strong>${fmt(data.result.injected)}</strong> test participants. New total: <strong>${fmt(
+                data.kpi.total
+              )}</strong> (${fmt(data.kpi.real)} real, ${fmt(data.kpi.injected)} injected).`,
+              'success'
+            );
+            await loadKpi(id);
+            await loadPlatform();
+          } catch (err) {
+            statusLine(escapeHtml(err.message), 'error');
+          } finally {
+            btn.disabled = false;
+          }
+        });
+
+        $('#btn-worldwide').addEventListener('click', async () => {
+          const id = $('#protest-select').value;
+          const perCountry = Number($('#per-country').value);
+          const raw = $('#country-filter').value.trim();
+          const countries = raw
+            ? raw
+                .split(/[,\s]+/)
+                .map((c) => c.toUpperCase())
+                .filter((c) => c.length === 2)
+            : undefined;
+          const btn = $('#btn-worldwide');
+          btn.disabled = true;
+          statusLine(`<span class="spinner"></span> Distributing participants across every country…`);
+          try {
+            const data = await api.injectWorldwide(id, { perCountry, countries });
+            statusLine(
+              `Injected <strong>${fmt(data.result.injected)}</strong> participants across <strong>${fmt(
+                data.result.countries
+              )}</strong> countries.${
+                data.result.skipped && data.result.skipped.length
+                  ? ` Skipped: ${data.result.skipped.join(', ')}`
+                  : ''
+              } New total: <strong>${fmt(data.kpi.total)}</strong>.`,
+              'success'
+            );
+            await loadKpi(id);
+            await loadPlatform();
+          } catch (err) {
+            statusLine(escapeHtml(err.message), 'error');
+          } finally {
+            btn.disabled = false;
+          }
+        });
+
+        $('#btn-clear').addEventListener('click', async () => {
+          const id = $('#protest-select').value;
+          if (!confirm('Remove every injected participant from this protest?')) return;
+          try {
+            const data = await api.clearInjections(id);
+            statusLine(`Cleared <strong>${fmt(data.removed)}</strong> injected participants.`, 'success');
+            await loadKpi(id);
+            await loadPlatform();
+          } catch (err) {
+            statusLine(escapeHtml(err.message), 'error');
+          }
+        });
+
+        $('#btn-validate').addEventListener('click', async () => {
+          const host = $('#checks');
+          host.innerHTML = '<span class="spinner"></span>';
+          try {
+            const { kpi: k } = await api.kpi($('#protest-select').value);
+            const checks = [];
+            const sumCountries = k.countries.reduce((s, c) => s + c.count, 0);
+            checks.push([
+              'Country counts sum to the total',
+              sumCountries === k.total,
+              `${fmt(sumCountries)} vs ${fmt(k.total)}`,
+            ]);
+            const sumGenders = k.genders.reduce((s, g) => s + g.count, 0);
+            checks.push(['Gender breakdown sums to the total', sumGenders === k.total, `${fmt(sumGenders)}`]);
+            const sumAges = k.ages.reduce((s, a) => s + a.count, 0);
+            checks.push(['Age breakdown sums to the total', sumAges === k.total, `${fmt(sumAges)}`]);
+            checks.push([
+              'Real + injected equals total',
+              k.real + k.injected === k.total,
+              `${fmt(k.real)} + ${fmt(k.injected)}`,
+            ]);
+            checks.push([
+              'Global coverage (200+ countries)',
+              k.countryCount >= 200,
+              `${fmt(k.countryCount)} countries`,
+            ]);
+            checks.push(['City and area coverage', k.cityCount > 100, `${fmt(k.cityCount)} cities`]);
+            checks.push([
+              'Every country has map coordinates',
+              k.countries.every((c) => c.lat && c.lng),
+              `${k.countries.filter((c) => !c.lat).length} missing`,
+            ]);
+            checks.push([
+              'No personal identifiers in payload',
+              !JSON.stringify(k).match(/"email"|"phone"|"address"|"fullName"/),
+              'clean',
+            ]);
+
+            host.innerHTML = '';
+            let passed = 0;
+            for (const [label, ok, detail] of checks) {
+              if (ok) passed += 1;
+              host.append(
+                el('div', { class: 'row-between notice ' + (ok ? 'success' : 'error') }, [
+                  el('span', { text: label }),
+                  el('span', { class: 'mono', text: detail }),
+                ])
+              );
+            }
+            host.prepend(
+              el('div', {
+                class: 'notice ' + (passed === checks.length ? 'success' : 'warn'),
+                html: `<strong>${passed}/${checks.length}</strong> checks passed.`,
+              })
+            );
+          } catch (err) {
+            host.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+          }
+        });
+
+        $('#btn-refresh').addEventListener('click', () => {
+          loadKpi();
+          loadPlatform();
+        });
+
+        $('#protest-select').addEventListener('change', (e) => selectProtest(e.target.value));
+
+        loadProtests()
+          .then(loadPlatform)
+          .catch((err) => toast(err.message, 'error'));
+      })();
+    </script>
+  </body>
+</html>

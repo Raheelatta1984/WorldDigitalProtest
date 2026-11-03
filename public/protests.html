@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live protests — World Digital Protest</title>
+    <meta name="description" content="Every open worldwide digital protest, with live participant counts by country, city and area." />
+    <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body>
+    <div id="site-header"></div>
+
+    <main class="wrap">
+      <section class="section" style="margin-top: 1.5rem">
+        <div class="section-head">
+          <div>
+            <h1 style="margin-bottom: 0.35rem">Live protests</h1>
+            <p>
+              Every protest runs on the same protocol and counts every participant live, by country,
+              city and area. Injected test participants are always labelled separately.
+            </p>
+          </div>
+          <div class="row">
+            <label class="row muted" style="gap: 0.4rem; font-size: 0.85rem">
+              <input type="checkbox" id="show-ended" checked /> show finished
+            </label>
+            <a class="btn btn-primary btn-sm" href="create.html">Start a protest</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" style="margin-top: 0.5rem">
+        <div class="grid grid-3" id="list">
+          <div class="card"><span class="spinner"></span> Loading protests…</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="card">
+          <h3>Worldwide totals across every open protest</h3>
+          <div class="grid grid-4 mt-2" id="world-totals">
+            <div class="stat accent">
+              <div class="stat-label">Participants</div>
+              <div class="stat-value" id="w-total">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Countries</div>
+              <div class="stat-value" id="w-countries">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Open protests</div>
+              <div class="stat-value" id="w-open">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Supported areas</div>
+              <div class="stat-value" id="w-areas">—</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <script src="/assets/js/core.js"></script>
+    <script src="/assets/js/shell.js"></script>
+    <script>
+      (function () {
+        const { $, el, api, fmt, compact, escapeHtml, relativeToNow, formatDateTime } = window.WDP;
+
+        function card(p) {
+          const totals = p.totals || p.kpi || {};
+          const phase =
+            p.phase === 'live'
+              ? '<span class="badge live">Live now</span>'
+              : p.phase === 'upcoming'
+              ? '<span class="badge upcoming">Opens ' + escapeHtml(relativeToNow(p.startsAt)) + '</span>'
+              : p.phase === 'cancelled'
+              ? '<span class="badge ended">Cancelled</span>'
+              : '<span class="badge ended">Finished</span>';
+
+          return el('article', { class: 'card protest-card' }, [
+            el('div', { class: 'meta', html: phase }),
+            el('h3', {}, el('a', { href: `protest.html?id=${encodeURIComponent(p.id)}`, text: p.headline })),
+            el('p', { class: 'reason', text: p.reason }),
+            el('div', {
+              class: 'progress',
+              html: `<span style="width:${Math.min(100, totals.progress || 0)}%"></span>`,
+            }),
+            el('div', { class: 'card-stats' }, [
+              el('span', { html: `<b>${fmt(totals.real)}</b> real · ${fmt(totals.injected)} test` }),
+              el('span', { html: `<b>${fmt(totals.total)}</b> joined` }),
+              el('span', { html: `<b>${fmt(totals.countries)}</b> countries` }),
+              el('span', { html: `<b>${fmt(totals.cities)}</b> cities` }),
+            ]),
+            el('div', { class: 'row-between' }, [
+              el('span', { class: 'dim', style: 'font-size:.78rem', text: formatDateTime(p.startsAt) }),
+              el('span', { class: 'dim', style: 'font-size:.78rem', text: `target ${compact(p.targetJoiners)}` }),
+            ]),
+            el('div', { class: 'row' }, [
+              el('a', {
+                class: 'btn btn-primary btn-sm',
+                href: `join.html?p=${encodeURIComponent(p.id)}`,
+                text: 'Join',
+              }),
+              el('a', {
+                class: 'btn btn-secondary btn-sm',
+                href: `protest.html?id=${encodeURIComponent(p.id)}`,
+                text: 'Live dashboard',
+              }),
+              el('a', {
+                class: 'btn btn-ghost btn-sm',
+                href: `overlay.html?id=${encodeURIComponent(p.id)}`,
+                text: 'KPI overlay',
+              }),
+            ]),
+          ]);
+        }
+
+        async function load() {
+          const showEnded = $('#show-ended').checked;
+          const host = $('#list');
+          try {
+            const [{ protests }, { status }] = await Promise.all([api.protests(showEnded), api.status()]);
+            host.innerHTML = '';
+            const visible = protests.filter((p) => showEnded || p.phase !== 'ended');
+            if (!visible.length) {
+              host.append(
+                el('div', { class: 'card' }, [
+                  el('h3', { text: 'Nothing open right now' }),
+                  el('p', { class: 'muted', text: 'Start a protest and it becomes visible worldwide immediately.' }),
+                  el('a', { class: 'btn btn-primary btn-sm', href: 'create.html', text: 'Start a protest' }),
+                ])
+              );
+            } else {
+              visible.forEach((p) => host.append(card(p)));
+            }
+
+            $('#w-total').textContent = fmt(status.totals.total);
+            $('#w-countries').textContent = fmt(status.totals.countries);
+            $('#w-open').textContent = fmt(protests.filter((p) => p.phase === 'live').length);
+            $('#w-areas').textContent = status.geo.cities.toLocaleString();
+          } catch (err) {
+            host.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+          }
+        }
+
+        $('#show-ended').addEventListener('change', load);
+        load();
+        setInterval(load, 25000);
+      })();
+    </script>
+  </body>
+</html>
