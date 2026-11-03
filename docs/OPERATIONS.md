@@ -24,13 +24,15 @@ Back it up by copying the file; writes are atomic (temp file + rename).
 ## Verify a deployment
 
 ```bash
-npm test                      # 27 unit + integration tests
+npm test                      # 43 unit + integration tests, incl. a real RTMP push
+npm run broadcast:check       # render → encode → RTMP → decode, no YouTube account needed
 node scripts/smoke.js http://localhost:3000
 ```
 
 The smoke script walks the whole promise: protocol integrity, peace screening, an online join, an
 offline beacon join, signed-envelope sync (accepting a genuine envelope and rejecting a forgery),
-KPI consistency, worldwide injection, and the live SSE channel.
+KPI consistency, worldwide injection, the live SSE channel, and the direct-to-YouTube broadcast
+plumbing (key storage, masking, frame preview, refusal to start without a key).
 
 ## Load characteristics
 
@@ -42,9 +44,32 @@ Measured on a single process:
 | KPI snapshot for 450k participants | ~9 ms |
 | 450k participants of stored state | ~13 MB (1.8 MB gzipped) |
 | Live channel | one coalesced KPI push per protest per second |
+| Broadcast frame, cold | ~650–850 ms (static layer + dynamic layer + fonts) |
+| Broadcast frame, warm | ~80–170 ms (static layer cached) |
+| Broadcast CPU at 1 fps / 2.5 Mbps | ~0.25 of a core per stream |
+| Broadcast bandwidth at 1 fps / 2.5 Mbps | ~0.3 MB/s ≈ 1 GB/hour |
 
 Injected test data is aggregated per city with nested gender/age/channel/minute counters, so its
 storage cost grows with geographic diversity, not with participant count.
+
+### Broadcast specifics
+
+The live push is the only part of the system that depends on the host, not just Node:
+
+| Requirement | Why | Check |
+| --- | --- | --- |
+| ffmpeg with `libx264`, `aac`, `rtmp`/`rtmps` | encodes and publishes the stream | `curl -s localhost:3000/api/broadcast \| jq .health.ffmpeg` |
+| A TTF font | draws every frame of the broadcast | `curl -s localhost:3000/api/broadcast \| jq .health.fonts` |
+| Outbound TCP 443 (RTMPS) or 1935 (RTMP) | reaches YouTube's ingest | `npm run broadcast:check` locally |
+
+If a host blocks 443 but allows 1935 (or the reverse), switch transport per protest with
+`{"transport":"rtmp"}` on `PUT /api/protests/:id/broadcast`. The bundled `Dockerfile` installs
+`font-dejavu` and runs under `tini` so ffmpeg gets a clean `SIGTERM` and ends the RTMP session
+properly on redeploy.
+
+Stream keys live in `$WDP_DATA_DIR/broadcast-keys.json` (mode `0600`), deliberately separate from
+`db.json` so a state export never carries credentials. Back it up as a secret or re-issue keys in
+YouTube Studio after a restore.
 
 ## Configuration
 

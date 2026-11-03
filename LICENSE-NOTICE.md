@@ -21,6 +21,25 @@ Bundled data assets are derived from the following sources:
 - Source: <https://github.com/lutangar/cities.json>
 - Licence: MIT.
 
+## pureimage — MIT
+
+- <https://github.com/joshmarinacci/node-pureimage>
+- Used at runtime to draw broadcast frames server-side (pure JavaScript, no native canvas).
+- Licence: MIT.
+
+## @ffmpeg-installer/ffmpeg — LGPL/GPL build of FFmpeg
+
+- <https://github.com/kribblo/node-ffmpeg-installer>
+- Optional dependency shipping a static FFmpeg binary used to encode and publish the live stream.
+- The bundled FFmpeg build is distributed under the GPL (it includes `libx264`); it is invoked as a
+  separate process, not linked into this application.
+- FFmpeg project: <https://ffmpeg.org/legal.html>
+
+## DejaVu fonts — Bitstream Vera / public domain additions
+
+- Used at runtime from the host (for example `fonts-dejavu-core`) to render broadcast text.
+- Licence: Bitstream Vera Fonts Copyright + public domain additions.
+
 ## Natural Earth — public domain
 
 - `public/assets/data/world.map.json` (generated)

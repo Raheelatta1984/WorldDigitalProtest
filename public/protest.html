@@ -263,6 +263,98 @@
         </div>
       </section>
 
+
+      <section class="section" id="broadcast-section">
+        <div class="card">
+          <div class="row-between" style="align-items: flex-start; gap: 1rem; flex-wrap: wrap">
+            <div>
+              <h3 style="margin: 0">Push this protest straight to YouTube Live</h3>
+              <p class="card-sub" style="margin-bottom: 0">
+                The server renders the dashboard above and sends it to YouTube over RTMP as a real
+                live video. No OBS, no browser window, no screen capture — the stream keeps running
+                while this page is closed, and the join counter updates on air as people join.
+              </p>
+            </div>
+            <span class="badge" id="broadcast-state">checking…</span>
+          </div>
+
+          <div class="grid grid-2 mt-2" style="gap: 1.25rem">
+            <div>
+              <label class="field">
+                <span class="field-label">YouTube stream key</span>
+                <input
+                  type="password"
+                  id="stream-key"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Paste the stream key from YouTube Studio → Go Live"
+                />
+                <span class="field-hint" id="stream-key-hint">
+                  Stored on the server only, never sent back to any browser, and never shown in the
+                  stream or the page.
+                </span>
+              </label>
+
+              <div class="row" style="gap: 0.75rem; flex-wrap: wrap">
+                <label class="field" style="flex: 1; min-width: 120px">
+                  <span class="field-label">Frame rate</span>
+                  <select id="broadcast-fps">
+                    <option value="0.5">0.5 fps (lowest cost)</option>
+                    <option value="1" selected>1 fps (recommended)</option>
+                    <option value="2">2 fps (smoother clock)</option>
+                  </select>
+                </label>
+                <label class="field" style="flex: 1; min-width: 120px">
+                  <span class="field-label">Bitrate</span>
+                  <select id="broadcast-bitrate">
+                    <option value="1500">1.5 Mbps</option>
+                    <option value="2500" selected>2.5 Mbps</option>
+                    <option value="4000">4 Mbps</option>
+                  </select>
+                </label>
+                <label class="field" style="flex: 1; min-width: 120px">
+                  <span class="field-label">Transport</span>
+                  <select id="broadcast-transport">
+                    <option value="rtmps" selected>RTMPS (port 443, works anywhere)</option>
+                    <option value="rtmp">RTMP (port 1935, if 443 is blocked)</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="row" style="gap: 0.5rem; flex-wrap: wrap">
+                <button class="btn btn-primary btn-sm" id="btn-save-key">Save settings</button>
+                <button class="btn btn-secondary btn-sm" id="btn-start-broadcast">Go live</button>
+                <button class="btn btn-ghost btn-sm" id="btn-stop-broadcast">Stop stream</button>
+                <a class="btn btn-ghost btn-sm" id="btn-preview-frame" target="_blank" rel="noopener">
+                  Preview the exact frame
+                </a>
+              </div>
+
+              <p class="dim" style="font-size: 0.82rem; margin-top: 0.85rem" id="broadcast-help">
+                In YouTube Studio: <strong>Create → Go live → Stream</strong>, copy the stream key,
+                paste it above, then press <em>Go live</em>. Keep the YouTube event created first —
+                YouTube rejects a publish to a key that has no event behind it.
+              </p>
+            </div>
+
+            <div>
+              <div class="preview-shell">
+                <img id="broadcast-preview" alt="Preview of the frame being pushed to YouTube Live" />
+              </div>
+              <div class="kv-table mt-2">
+                <div><span>Status</span><span id="bc-state">—</span></div>
+                <div><span>Destination</span><span id="bc-target" class="mono">—</span></div>
+                <div><span>Uptime</span><span id="bc-uptime">—</span></div>
+                <div><span>Frames sent</span><span id="bc-frames">—</span></div>
+                <div><span>Data sent</span><span id="bc-bytes">—</span></div>
+                <div><span>Reconnects</span><span id="bc-attempts">—</span></div>
+              </div>
+              <div id="broadcast-log" class="mono broadcast-log mt-2"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="section">
         <div class="card">
           <h3>Test data notice</h3>
@@ -661,9 +753,142 @@
           });
         }
 
+
+        // ---------------------------------------------------------------
+        // Direct-to-YouTube broadcast control
+        // ---------------------------------------------------------------
+        function initBroadcast() {
+          const stateEl = $('#broadcast-state');
+          const logEl = $('#broadcast-log');
+          const previewEl = $('#broadcast-preview');
+          const setBadge = (text, cls) => {
+            stateEl.textContent = text;
+            stateEl.className = `badge ${cls || ''}`.trim();
+          };
+
+          const fmtDuration = (seconds) => {
+            const s = Math.max(0, Math.round(seconds || 0));
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const sec = s % 60;
+            return h ? `${h}h ${m}m` : m ? `${m}m ${sec}s` : `${sec}s`;
+          };
+
+          let lastStatus = null;
+
+          function paint(status) {
+            lastStatus = status;
+            const labels = {
+              idle: ['not streaming', ''],
+              starting: ['connecting…', 'upcoming'],
+              live: ['live on YouTube', 'live'],
+              reconnecting: ['reconnecting…', 'upcoming'],
+              stopping: ['stopping…', 'upcoming'],
+              error: ['stream error', 'ended'],
+            };
+            const [text, cls] = labels[status.state] || ['unknown', ''];
+            setBadge(text, cls);
+
+            $('#bc-state').textContent = status.state;
+            $('#bc-target').textContent = status.target || '—';
+            $('#bc-uptime').textContent = status.startedAt ? fmtDuration(status.uptimeSeconds) : '—';
+            $('#bc-frames').textContent = status.frames
+              ? `${status.frames.toLocaleString()} (${status.fps || 1} fps)`
+              : '—';
+            $('#bc-bytes').textContent = status.megabytes ? `${status.megabytes} MB` : '—';
+            $('#bc-attempts').textContent = status.attempts > 1 ? String(status.attempts - 1) : '0';
+            logEl.textContent = (status.log || []).slice(-8).join('\n');
+
+            $('#btn-start-broadcast').disabled = ['live', 'starting', 'reconnecting'].includes(status.state);
+            $('#btn-stop-broadcast').disabled = status.state === 'idle' || status.state === 'stopping';
+          }
+
+          async function refresh() {
+            try {
+              const { broadcast: status } = await api.broadcast(protestId);
+              paint(status);
+              const hint = status.hasKey ? `Key saved: ${status.keyHint}` : '';
+              $('#stream-key-hint').textContent = hint
+                ? `${hint} — stored on the server only, never sent back to a browser.`
+                : 'Stored on the server only, never sent back to any browser.';
+              return status;
+            } catch (err) {
+              setBadge('broadcast unavailable', 'upcoming');
+              logEl.textContent = err.message;
+              return null;
+            }
+          }
+
+          let previewTimer = null;
+          function startPreview() {
+            const nextFrame = () => {
+              previewEl.src = `${api.frameUrl(protestId)}?t=${Date.now()}`;
+            };
+            nextFrame();
+            clearInterval(previewTimer);
+            // Slow refresh: the frame endpoint renders a full 1080p image.
+            previewTimer = setInterval(nextFrame, 15000);
+          }
+          startPreview();
+
+          $('#btn-save-key').addEventListener('click', async () => {
+            const streamKey = $('#stream-key').value.trim();
+            const body = {
+              fps: Number($('#broadcast-fps').value),
+              bitrateKbps: Number($('#broadcast-bitrate').value),
+              transport: $('#broadcast-transport').value,
+            };
+            if (streamKey) body.streamKey = streamKey;
+            try {
+              await api.saveBroadcast(protestId, body);
+              $('#stream-key').value = '';
+              toast('Broadcast settings saved on the server.', 'success');
+              await refresh();
+            } catch (err) {
+              toast(err.message, 'error');
+            }
+          });
+
+          $('#btn-start-broadcast').addEventListener('click', async () => {
+            try {
+              await api.startBroadcast(protestId, {});
+              toast('Connecting to YouTube…', 'success');
+              setBadge('connecting…', 'upcoming');
+              await refresh();
+            } catch (err) {
+              if (/stream key/i.test(err.message)) {
+                toast('Add your YouTube stream key first, then press Go live.', 'error');
+                $('#stream-key').focus();
+              } else {
+                toast(err.message, 'error');
+              }
+            }
+          });
+
+          $('#btn-stop-broadcast').addEventListener('click', async () => {
+            try {
+              await api.stopBroadcast(protestId);
+              toast('Stream stopped.', 'success');
+              await refresh();
+            } catch (err) {
+              toast(err.message, 'error');
+            }
+          });
+
+          refresh();
+          const poll = setInterval(() => {
+            const status = refresh();
+            // Stop polling hard once the page is hidden; resume on focus.
+            if (document.hidden && lastStatus && lastStatus.state === 'idle') clearInterval(poll);
+          }, 3000);
+          return poll;
+        }
+
         boot();
+        const broadcastPoll = initBroadcast();
 
         window.addEventListener('beforeunload', () => {
+          if (broadcastPoll) clearInterval(broadcastPoll);
           if (stream) stream.close();
         });
       })();

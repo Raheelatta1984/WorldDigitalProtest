@@ -1057,6 +1057,91 @@ th.num {
   }
 }
 
+
+/* ---------------------------------------------------------------------------
+   Broadcast control (direct RTMP push to YouTube Live)
+   --------------------------------------------------------------------------- */
+
+.field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--muted, #93a4c1);
+  line-height: 1.45;
+}
+
+.preview-shell {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 49, 76, 0.9);
+  background: #070b14;
+  aspect-ratio: 16 / 9;
+}
+
+.preview-shell img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.preview-shell img:not([src]) {
+  visibility: hidden;
+}
+
+.kv-table {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.84rem;
+}
+
+.kv-table > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px dashed rgba(34, 49, 76, 0.7);
+}
+
+.kv-table > div > span:first-child {
+  color: var(--muted, #93a4c1);
+  white-space: nowrap;
+}
+
+.kv-table > div > span:last-child {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.broadcast-log {
+  max-height: 9rem;
+  overflow-y: auto;
+  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(7, 11, 20, 0.85);
+  border: 1px solid rgba(34, 49, 76, 0.7);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #8ba0c0;
+  white-space: pre-wrap;
+}
+
+.broadcast-log:empty {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .kv-table > div {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .kv-table > div > span:last-child {
+    text-align: left;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

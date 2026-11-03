@@ -31,6 +31,8 @@ import {
 import * as store from '../lib/store.js';
 import * as events from '../lib/events.js';
 import { injectParticipants, injectWorldwide, injectionMeta } from '../lib/injector.js';
+import * as broadcast from '../lib/broadcast.js';
+import { renderFrame } from '../lib/broadcast-render.js';
 
 const router = express.Router();
 
@@ -581,6 +583,137 @@ router.get('/status', (req, res) => {
       serverTime: new Date().toISOString(),
     },
   });
+});
+
+
+// ---------------------------------------------------------------------------
+// Direct-to-YouTube broadcast
+//
+// A stream key is a credential: it is accepted here, stored server-side, and
+// never returned to a browser. Reads expose `hasKey` plus a masked hint only.
+// ---------------------------------------------------------------------------
+
+const broadcastGuard = (req, res, next) => {
+  if (!config.broadcastEnabled) {
+    return res.status(503).json({
+      ok: false,
+      error: 'Direct broadcast is disabled on this server (set WDP_BROADCAST=1).',
+      code: 'broadcast_disabled',
+    });
+  }
+  return next();
+};
+
+// Only the operator may drive a broadcast. A stream key on the record is the
+// authority; if none is set anywhere, injection rules apply so a local install
+// can be set up from the browser.
+const canOperate = (req, protestId) => {
+  if (broadcast.hasStreamKey(protestId)) {
+    const token = req.get('x-injection-token') || req.query.token || '';
+    if (config.injectionToken) return token === config.injectionToken;
+    return true; // single-operator install: possession of a key is the gate
+  }
+  return config.enableTestInjection;
+};
+
+router.get('/broadcast', (req, res) =>
+  ok(res, { health: broadcast.broadcastHealth(), broadcasts: broadcast.listBroadcasts() })
+);
+
+router.get('/protests/:id/broadcast', (req, res) => {
+  const protest = store.getProtest(req.params.id);
+  if (!protest) return res.status(404).json({ ok: false, error: 'Protest not found.' });
+  return ok(res, { broadcast: broadcast.broadcastStatus(req.params.id) });
+});
+
+router.put('/protests/:id/broadcast', broadcastGuard, (req, res) => {
+  const protest = store.getProtest(req.params.id);
+  if (!protest) return res.status(404).json({ ok: false, error: 'Protest not found.' });
+  if (!canOperate(req, req.params.id)) {
+    return res.status(403).json({ ok: false, error: 'Not allowed to change this broadcast.' });
+  }
+
+  const { streamKey, fps, bitrateKbps, transport, autoStart, ingest } = req.body || {};
+
+  if (streamKey !== undefined) broadcast.setStreamKey(req.params.id, streamKey);
+
+  const settings = broadcast.saveBroadcastSettings(req.params.id, {
+    fps,
+    bitrateKbps,
+    transport,
+    autoStart,
+    ingest,
+  });
+
+  return ok(res, {
+    settings,
+    broadcast: broadcast.broadcastStatus(req.params.id),
+    note: 'Stream key stored on the server only; it is never sent back to a browser.',
+  });
+});
+
+router.post('/protests/:id/broadcast/start', broadcastGuard, async (req, res, next) => {
+  try {
+    const protest = store.getProtest(req.params.id);
+    if (!protest) return res.status(404).json({ ok: false, error: 'Protest not found.' });
+    if (!canOperate(req, req.params.id)) {
+      return res.status(403).json({ ok: false, error: 'Not allowed to start this broadcast.' });
+    }
+    const status = broadcast.startBroadcast(req.params.id, {
+      fps: req.body?.fps,
+      bitrateKbps: req.body?.bitrateKbps,
+    });
+    return ok(res, { broadcast: status }, 202);
+  } catch (err) {
+    if (err.code === 'missing_stream_key') {
+      return res.status(400).json({ ok: false, error: err.message, code: err.code });
+    }
+    return next(err);
+  }
+});
+
+router.post('/protests/:id/broadcast/stop', broadcastGuard, async (req, res) => {
+  const protest = store.getProtest(req.params.id);
+  if (!protest) return res.status(404).json({ ok: false, error: 'Protest not found.' });
+  if (!canOperate(req, req.params.id)) {
+    return res.status(403).json({ ok: false, error: 'Not allowed to stop this broadcast.' });
+  }
+  const status = await broadcast.stopBroadcast(req.params.id);
+  return ok(res, { broadcast: status });
+});
+
+router.post('/protests/:id/broadcast/restart', broadcastGuard, async (req, res) => {
+  const protest = store.getProtest(req.params.id);
+  if (!protest) return res.status(404).json({ ok: false, error: 'Protest not found.' });
+  if (!canOperate(req, req.params.id)) {
+    return res.status(403).json({ ok: false, error: 'Not allowed to restart this broadcast.' });
+  }
+  const status = await broadcast.restartBroadcast(req.params.id);
+  return ok(res, { broadcast: status });
+});
+
+// Preview: the exact frame that would be pushed, as an image. Handy for
+// checking a headline/layout without going live.
+router.get('/protests/:id/broadcast/frame.png', async (req, res, next) => {
+  try {
+    const protest = store.getProtest(req.params.id);
+    if (!protest) return res.status(404).json({ ok: false, error: 'Protest not found.' });
+    const file = await renderFrame({
+      protest: store.serializeProtest(protest),
+      kpi: store.buildKpi(req.params.id),
+      recent: store.listJoiners(req.params.id, { limit: 5 }),
+      format: 'png',
+    });
+    const fs = await import('node:fs');
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-store');
+    const stream = fs.createReadStream(file);
+    stream.on('close', () => fs.unlink(file, () => {}));
+    stream.pipe(res);
+    return undefined;
+  } catch (err) {
+    return next(err);
+  }
 });
 
 router.get('/audit', (req, res) => ok(res, { audit: store.auditLog().slice(0, 200) }));

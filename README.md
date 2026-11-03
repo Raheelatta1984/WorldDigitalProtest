@@ -16,7 +16,7 @@ selection across areas → scheduled time window. It is never automatic and neve
 - **No travel required** — digital presence is full participation
 - **No personal data** — generated names only; age range, gender, and the country/city/area used for the count
 - **Live worldwide KPIs** — country, city, area, region, continent, gender, age, join channel, velocity
-- **Live stream per protest** — YouTube live slot + a transparent KPI overlay for broadcast software
+- **Live stream per protest** — the server pushes the KPI dashboard straight to YouTube Live over RTMP (no OBS, no capture), plus a transparent overlay for OBS when you want a host on camera
 - **Test injection** — validate worldwide numbers before launch; injected participants are always labelled and separated
 
 ---
@@ -25,11 +25,12 @@ selection across areas → scheduled time window. It is never automatic and neve
 
 ```bash
 npm install
-npm run build:geo     # once: builds the offline geo dataset (already committed, see below)
-npm run seed          # optional: 4 sample protests + a realistic global baseline
-npm start             # http://localhost:3000
-npm test              # 27 protocol + integration tests
-node scripts/smoke.js # end-to-end check against a running instance
+npm run build:geo          # once: builds the offline geo dataset (already committed, see below)
+npm run seed               # optional: 4 sample protests + a realistic global baseline
+npm start                  # http://localhost:3000
+npm test                   # protocol, API and broadcast suites (43 tests)
+npm run broadcast:check    # prove the RTMP push works, without YouTube credentials
+node scripts/smoke.js      # end-to-end check against a running instance
 ```
 
 Requires Node.js 20+. No database, no external services, no API keys.
@@ -42,6 +43,8 @@ Requires Node.js 20+. No database, no external services, no API keys.
 | `npm run seed` | Create sample protests and a labelled global test baseline |
 | `npm run seed -- --reset` | Wipe everything, then reseed |
 | `npm run build:geo` | Rebuild `server/data/geo.json` from GeoNames sources |
+| `npm run broadcast:check` | Render → encode → RTMP to a local ingest, then decode the result |
+| `npm run frame -- <id>` | Render one 1920x1080 broadcast frame to a file |
 
 ---
 
@@ -136,8 +139,14 @@ Invariants (asserted in the test suite): country, gender and age breakdowns each
 
 ### 5. Live streaming and the overlay
 
-- Each protest can carry a YouTube live video id (`PATCH /api/protests/:id` with `youtube.videoId`);
-  the protest page embeds the stream and keeps the KPI panel on screen until the protest finishes.
+- **The server pushes the protest to YouTube itself.** Paste a stream key on the protest page and the
+  platform renders its own 1920x1080 KPI frame once a second, encodes it with ffmpeg (H.264 + AAC),
+  and publishes it to YouTube Live over RTMPS — no OBS, no screen capture, no browser tab. It keeps
+  going when the operator closes their laptop, reconnects with backoff if YouTube drops the
+  connection, and the join counter changes on air as people join.
+- Each protest can also carry a YouTube live video id (`PATCH /api/protests/:id` with
+  `youtube.videoId`); the protest page embeds the stream and keeps the KPI panel on screen until the
+  protest finishes.
 - `overlay.html?id=<protestId>` is a transparent, broadcast-safe KPI overlay for OBS/browser
   sources: headline, big numbers, top countries, gender and age bars, and a live arrival ticker.
 - Live updates use **Server-Sent Events** (`GET /api/protests/:id/stream`) with a polling fallback,
@@ -192,7 +201,11 @@ Injection can be disabled with `WDP_ENABLE_INJECTION=false`, and locked with
 | `protocol.html` | The full protocol, wire contract, live language screening |
 | `create.html` | Publish a protest (violent language is blocked) |
 | `testlab.html` | Inject worldwide test data and validate every panel |
-| `overlay.html?id=…` | Transparent KPI overlay for the YouTube live stream |
+| `overlay.html?id=…` | Transparent KPI overlay for OBS / Streamlabs |
+
+The protest page also carries the **broadcast panel**: paste a YouTube stream key, press *Go live*,
+and the server itself publishes the dashboard to YouTube as a real live video — no OBS, no browser
+capture, no operator needed.
 
 ## API
 
@@ -222,6 +235,11 @@ Injection can be disabled with `WDP_ENABLE_INJECTION=false`, and locked with
 | POST | `/api/protests/:id/report` | Report a protocol breach |
 | POST | `/api/protests/:id/physical-request` | Request physical presence (→ verification) |
 | GET | `/api/protests/:id/physical-requests` | Requests for a protest |
+| GET | `/api/broadcast` | Encoder/font health, active broadcasts |
+| GET | `/api/protests/:id/broadcast` | Broadcast status (key masked, never returned) |
+| PUT | `/api/protests/:id/broadcast` | Store the YouTube stream key + fps/bitrate/transport |
+| POST | `/api/protests/:id/broadcast/start` · `/stop` · `/restart` | Drive the live push |
+| GET | `/api/protests/:id/broadcast/frame.png` | The exact frame being pushed to YouTube |
 | POST | `/api/test/inject/:id` · `/worldwide` · `/clear` | Test data |
 
 ## Data and attribution
@@ -245,6 +263,11 @@ Injection can be disabled with `WDP_ENABLE_INJECTION=false`, and locked with
 | `WDP_INJECTION_TOKEN` | *(empty)* | Require `x-injection-token` on injection |
 | `WDP_PAIRING_TTL_MS` | `900000` | Pairing-code lifetime (15 min) |
 | `YOUTUBE_CHANNEL_URL` | `https://www.youtube.com/@WorldDigitalProtest` | Default channel |
+| `WDP_BROADCAST` | `1` | Serve the direct-to-YouTube push routes |
+| `WDP_BROADCAST_AUTORESUME` | `0` | Restart `autoStart` broadcasts on boot |
+| `WDP_RTMP_TARGET` | *(YouTube)* | Custom RTMP ingest for all protests |
+| `WDP_FFMPEG` | bundled | Override the ffmpeg binary |
+| `WDP_FONT_REGULAR` / `_BOLD` | auto | TTF used to render broadcast frames |
 | `WDP_MAX_JOINERS` | `5000000` | Per-protest capacity guard |
 
 ## Self-hosting
@@ -253,6 +276,11 @@ The app is a single Node process with two runtime dependencies (`express`, `qrco
 external services, telemetry or third-party scripts. It is designed to run on a small VPS, in a
 container, or behind any reverse proxy — including behind restrictive networks where participants
 can only reach a local hotspot.
+
+Direct-to-YouTube push adds one optional dependency (`@ffmpeg-installer/ffmpeg`, a static binary, no
+root needed) and a font (`fonts-dejavu-core`). The bundled `Dockerfile` installs both. Verify a box
+without any YouTube credentials using `npm run broadcast:check`, which pushes a real RTMP stream to
+a local ffmpeg ingest and decodes the result.
 
 ## Scope and safety notes
 
@@ -263,8 +291,8 @@ requirement, and the platform's own text screening blocks calls to violence at c
 
 ## Documentation
 
-- [`docs/STREAMING.md`](docs/STREAMING.md) — attach a protest to a YouTube live stream, add the KPI
-  overlay in OBS, and what the overlay shows.
+- [`docs/STREAMING.md`](docs/STREAMING.md) — push the protest straight to YouTube Live from the
+  server (no OBS), or add the KPI overlay in OBS; what the frame shows, cost, and verification.
 - [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — deploy, verify, load characteristics, complete data
   model, offline/Bluetooth architecture, and where to extend.
 

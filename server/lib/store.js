@@ -358,6 +358,11 @@ export function updateProtest(id, patch = {}) {
   if (patch.youtube) {
     protest.youtube = { ...protest.youtube, ...patch.youtube };
   }
+  if (patch.broadcast) {
+    // Broadcast preferences (fps, bitrate, transport, ingest). The stream key
+    // deliberately never lands here; it is kept in its own 0600 file.
+    protest.broadcast = { ...(protest.broadcast || {}), ...patch.broadcast };
+  }
   audit('protest.updated', { id, keys: Object.keys(patch) });
   scheduleSave();
   return protest;

@@ -180,7 +180,37 @@ async function main() {
     fail('test injection endpoint', `status ${injected.status} (disabled on this deployment?)`);
   }
 
-  // 8. pages
+  // 8. direct-to-YouTube broadcast plumbing
+  const health2 = await api('/broadcast');
+  check('broadcast subsystem reports its encoder', health2.status === 200 && Boolean(health2.json.health.ffmpeg.path));
+  check('broadcast renders a 1080p frame', health2.json.health.frame.width === 1920 && health2.json.health.frame.height === 1080);
+
+  const keyValue = 'smoke-test-key-9f3a2b1c';
+  const savedKey = await api(`/protests/${protestId}/broadcast`, {
+    method: 'PUT',
+    body: { streamKey: keyValue, fps: 1, bitrateKbps: 2500, transport: 'rtmps' },
+  });
+  check('stream key is accepted server-side', savedKey.status === 200 && savedKey.json.broadcast.hasKey === true);
+  check('stream key is never echoed back', !JSON.stringify(savedKey.json).includes(keyValue));
+  check('destination is masked in responses', String(savedKey.json.broadcast.target).includes('<stream-key>'));
+
+  const framed = await fetch(`${base}/api/protests/${protestId}/broadcast/frame.png`);
+  const frameBytes = framed.ok ? Buffer.from(await framed.arrayBuffer()) : Buffer.alloc(0);
+  check(
+    'exact broadcast frame is previewable',
+    framed.status === 200 && frameBytes.length > 10000 && frameBytes.readUInt32BE(16) === 1920
+  );
+
+  const clearedKey = await api(`/protests/${protestId}/broadcast`, { method: 'PUT', body: { streamKey: '' } });
+  check('stream key can be removed', clearedKey.json.broadcast.hasKey === false);
+
+  const noKeyStart = await api(`/protests/${protestId}/broadcast/start`, { method: 'POST', body: {} });
+  check(
+    'starting without a key is refused',
+    noKeyStart.status === 400 && noKeyStart.json.code === 'missing_stream_key'
+  );
+
+  // 9. pages
   for (const page of ['/', '/protests.html', '/protest.html', '/join.html', '/offline.html', '/protocol.html', '/testlab.html', '/overlay.html']) {
     const res = await fetch(`${base}${page}`);
     check(`page ${page} serves`, res.status === 200);
